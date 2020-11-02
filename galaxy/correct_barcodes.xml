@@ -3,8 +3,9 @@
   <description>of duplex sequencing reads</description>
   <requirements>
     <requirement type="package" version="1.1.2">bowtie</requirement>
-    <requirement type="package" version="1.10">networkx</requirement>
+    <requirement type="package" version="1.11">networkx</requirement>
     <requirement type="package" version="2.15">dunovo</requirement>
+    <requirement type="package" version="0.1.18">samtools</requirement>
     <!-- TODO: require Python 2.7 -->
   </requirements>
   <version_command>correct.py --version</version_command>
