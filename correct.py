@@ -118,8 +118,9 @@ def main(argv):
     names_to_barcodes = map_names_to_barcodes(args.reads, args.limit)
 
     logging.info('Reading the SAM to build the graph of barcode relationships..')
+    passing_alignments = filter_alignment(args.sam, args.pos, args.mapq, args.dist, args.limit)
     graph, reversed_barcodes, num_good_alignments = read_alignments(
-      args.sam, names_to_barcodes, args.pos, args.mapq, args.dist, args.limit
+      passing_alignments, names_to_barcodes
     )
 
     logging.info('Reading the families.tsv to get the counts of each family..')
@@ -254,10 +255,12 @@ def map_names_to_barcodes(reads_file, limit=None):
   return names_to_barcodes
 
 
-def parse_alignment(sam_file, pos_thres, mapq_thres, dist_thres):
-  """Parse the SAM file and yield reads that pass the filters.
+def filter_alignment(sam_file, pos_thres, mapq_thres, dist_thres, limit=None):
+  """Read the SAM file and yield reads that pass the filters.
   Returns (qname, rname, reversed)."""
   for aln_num, aln in enumerate(samreader.read(sam_file), 1):
+    if limit is not None and aln_num > limit:
+      break
     logging.debug(f'read {aln.rname} -> ref {aln.qname} (read seq {aln.seq}):')
     rname_fields = aln.rname.split(':')
     if len(rname_fields) == 2 and rname_fields[1] == 'rev':
@@ -296,14 +299,18 @@ def parse_alignment(sam_file, pos_thres, mapq_thres, dist_thres):
       continue
     nm = aln.tags.get('NM')
     if nm is None:
-      raise RuntimeError(f'Alignment missing NM tag on line {line_num}')
+      if 'N' in aln.seq:
+        logging.info(f"\tAlignment missing NM tag, but likely due to N's in sequence: {aln.seq!r}")
+        continue
+      else:
+        raise RuntimeError(f'Alignment missing NM tag in alignment {aln_num}')
     if nm > dist_thres:
       logging.debug(f'\tAlignment failed NM distance filter: {nm} > {dist_thres}')
       continue
     yield qname, rname, reversed
 
 
-def read_alignments(sam_file, names_to_barcodes, pos_thres, mapq_thres, dist_thres, limit=None):
+def read_alignments(alignments, names_to_barcodes):
   """Read the alignments from the SAM file.
   Returns (graph, reversed_barcodes, num_good_alignments):
   graph: A networkx.Graph() containing a node per barcode (the sequence as a str), and an edge
@@ -316,13 +323,8 @@ def read_alignments(sam_file, names_to_barcodes, pos_thres, mapq_thres, dist_thr
   reversed_barcodes = set()
   # Maps correct barcode numbers to sets of original barcodes (includes correct ones).
   num_good_alignments = 0
-  for qname, rname, reversed in parse_alignment(sam_file, pos_thres, mapq_thres, dist_thres):
+  for qname, rname, reversed in alignments:
     num_good_alignments += 1
-    if limit is not None and num_good_alignments > limit:
-      break
-    # Skip self-alignments.
-    if rname == qname:
-      continue
     rseq = names_to_barcodes[rname]
     qseq = names_to_barcodes[qname]
     # Is this an alignment to a reversed barcode?
