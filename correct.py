@@ -11,6 +11,8 @@ import networkx
 import parallel_tools
 import swalign
 import shims
+from bfx import samreader
+from bfx import getreads
 # There can be problems with the submodules, but none are essential.
 # Try to load these modules, but if there's a problem, load a harmless dummy and continue.
 version = shims.get_module_or_shim('utillib.version')
@@ -27,14 +29,14 @@ corrected."""
 def make_argparser():
   parser = argparse.ArgumentParser(usage=USAGE, description=DESCRIPTION)
   parser.add_argument('families', type=open_as_text_or_gzip,
-    help='The sorted output of make-barcodes.awk. The important part is that it\'s a tab-delimited '
-         'file with at least 2 columns: the barcode sequence and order, and it must be sorted in '
-         'the same order as the "reads" in the SAM file.')
+    help="The sorted output of make-barcodes.awk. The important part is that it's a tab-delimited "
+      'file with at least 2 columns: the barcode sequence and order, and it must be sorted in the '
+      'same order as the "reads" in the SAM file.')
   parser.add_argument('reads', type=open_as_text_or_gzip,
     help='The fasta/q file given to the aligner. Used to get barcode sequences from read names.')
   parser.add_argument('sam', type=argparse.FileType('r'), nargs='?', default=sys.stdin,
     help='Barcode alignment, in SAM format. Omit to read from stdin. The read names must be '
-         'integers, representing the (1-based) order they appear in the families file.')
+      'integers, representing the (1-based) order they appear in the families file.')
   parser.add_argument('-P', '--prepend', action='store_true',
     help='Prepend the corrected barcodes and orders to the original columns.')
   parser.add_argument('-d', '--dist', type=int, default=1,
@@ -43,15 +45,15 @@ def make_argparser():
     help='MAPQ threshold. Default: %(default)s')
   parser.add_argument('-p', '--pos', type=int, default=2,
     help='POS tolerance. Alignments will be ignored if abs(POS - 1) is greater than this value. '
-         'Set to greater than the barcode length for no threshold. Default: %(default)s')
+      'Set to greater than the barcode length for no threshold. Default: %(default)s')
   parser.add_argument('-c', '--choose-by', choices=('count', 'connect'), default='count',
     help='Choose the "correct" barcode in a network of related barcodes by either the count of how '
-         'many times the barcode was observed ("freq") or how connected the barcode is to the '
-         'others in the network ("connect").')
+      'many times the barcode was observed ("freq") or how connected the barcode is to the others '
+      'in the network ("connect").')
   parser.add_argument('-I', '--no-check-ids', dest='check_ids', action='store_false', default=True,
-    help='Don\'t check to make sure read pairs have identical ids. By default, if this '
-         'encounters a pair of reads in families.tsv with ids that aren\'t identical (minus an '
-         'ending /1 or /2), it will throw an error.')
+    help="Don't check to make sure read pairs have identical ids. By default, if this encounters a "
+      "pair of reads in families.tsv with ids that aren't identical (minus an ending /1 or /2), it "
+      "will throw an error.")
   parser.add_argument('--limit', type=int,
     help='Limit the number of lines that will be read from each input file, for testing purposes.')
   parser.add_argument('-S', '--structures', action='store_true',
@@ -59,28 +61,27 @@ def make_argparser():
   parser.add_argument('--struct-human', action='store_true')
   parser.add_argument('-V', '--visualize', metavar='networks.png', nargs='?', default=0,
     help='Produce a visualization of the unique structures and write the image to this file. '
-         'If you omit a filename, it will be displayed in a window.')
+      'If you omit a filename, it will be displayed in a window.')
   parser.add_argument('-F', '--viz-format', choices=('dot', 'graphviz', 'png'), default='png')
   parser.add_argument('-n', '--no-output', dest='output', action='store_false', default=True)
   parser.add_argument('-l', '--log', type=argparse.FileType('w'), default=sys.stderr,
     help='Print log messages to this file instead of to stderr. Warning: Will overwrite the file.')
   parser.add_argument('-q', '--quiet', dest='volume', action='store_const', const=logging.CRITICAL,
-                      default=logging.WARNING)
+    default=logging.WARNING)
   parser.add_argument('-i', '--info', dest='volume', action='store_const', const=logging.INFO)
   parser.add_argument('-v', '--verbose', dest='volume', action='store_const', const=VERBOSE)
   parser.add_argument('-D', '--debug', dest='volume', action='store_const', const=logging.DEBUG,
     help='Print debug messages (very verbose).')
   parser.add_argument('--phone-home', action='store_true',
     help='Report helpful usage data to the developer, to better understand the use cases and '
-         'performance of the tool. The only data which will be recorded is the name and version of '
-         'the tool, the size of the input data, the time and memory taken to process it, and the '
-         'IP address of the machine running it. Also, if the script fails, it will report the name '
-         'of the exception thrown and the line of code it occurred in. No parameters or filenames '
-         'are sent. All the reporting and recording code is available at '
-         'https://github.com/NickSto/ET.')
+      'performance of the tool. The only data which will be recorded is the name and version of '
+      'the tool, the size of the input data, the time and memory taken to process it, and the IP '
+      'address of the machine running it. Also, if the script fails, it will report the name of '
+      'the exception thrown and the line of code it occurred in. No parameters or filenames are '
+      'sent. All the reporting and recording code is available at https://github.com/NickSto/ET.')
   parser.add_argument('--galaxy', dest='platform', action='store_const', const='galaxy',
-    help='Tell the script it\'s running on Galaxy. Currently this only affects data reported '
-         'when phoning home.')
+    help="Tell the script it's running on Galaxy. Currently this only affects data reported when "
+      'phoning home.')
   parser.add_argument('--test', action='store_true',
     help='If reporting usage data, mark this as a test run.')
   parser.add_argument('--version', action='version', version=str(version.get_version()),
@@ -104,8 +105,9 @@ def main(argv):
   start_time = time.time()
   # If the user requested, report back some data about the start of the run.
   if args.phone_home:
-    call = phone.Call(__file__, version.get_version(), platform=args.platform, test=args.test,
-                      fail='warn')
+    call = phone.Call(
+      __file__, version.get_version(), platform=args.platform, test=args.test, fail='warn'
+    )
     call.send_data('start')
     call.send_data('prelim', run_data=gather_prelim_data(args.families, args.reads, args.sam))
 
@@ -116,13 +118,14 @@ def main(argv):
     names_to_barcodes = map_names_to_barcodes(args.reads, args.limit)
 
     logging.info('Reading the SAM to build the graph of barcode relationships..')
-    graph, reversed_barcodes, num_good_alignments = read_alignments(args.sam, names_to_barcodes,
-                                                                    args.pos, args.mapq,
-                                                                    args.dist, args.limit)
+    graph, reversed_barcodes, num_good_alignments = read_alignments(
+      args.sam, names_to_barcodes, args.pos, args.mapq, args.dist, args.limit
+    )
 
     logging.info('Reading the families.tsv to get the counts of each family..')
-    family_counts, read_pairs = get_family_counts(args.families, limit=args.limit,
-                                                  check_ids=args.check_ids)
+    family_counts, read_pairs = get_family_counts(
+      args.families, limit=args.limit, check_ids=args.check_ids
+    )
 
     if args.structures or args.visualize != 0:
       logging.info('Counting the unique barcode networks..')
@@ -138,13 +141,14 @@ def main(argv):
 
     logging.info('Reading the families.tsv again to print corrected output..')
     with open_as_text_or_gzip(args.families.name) as families:
-      print_corrected_output(families, corrections, reversed_barcodes, args.prepend, args.limit,
-                             args.output)
+      print_corrected_output(
+        families, corrections, reversed_barcodes, args.prepend, args.limit, args.output
+      )
 
     run_time = int(time.time() - start_time)
     max_mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1024
-    logging.info('Max memory usage: {:0.2f}MB'.format(max_mem))
-    logging.info('Wall clock time:  {} seconds'.format(run_time))
+    logging.info(f'Max memory usage: {max_mem:0.2f}MB')
+    logging.info(f'Wall clock time:  {run_time} seconds')
 
   except (Exception, KeyboardInterrupt) as exception:
     if args.phone_home and call:
@@ -157,8 +161,10 @@ def main(argv):
         raise
       run_time = int(time.time() - start_time)
       try:
-        run_data = {'barcodes':len(names_to_barcodes), 'good_alignments':num_good_alignments,
-                    'read_pairs':read_pairs, 'max_mem':int(max_mem)}
+        run_data = {
+          'barcodes':len(names_to_barcodes), 'good_alignments':num_good_alignments,
+          'read_pairs':read_pairs, 'max_mem':int(max_mem)
+        }
       except Exception:
         run_data = {}
       run_data['failed'] = True
@@ -170,8 +176,10 @@ def main(argv):
       raise
 
   if args.phone_home:
-    run_data = {'barcodes':len(names_to_barcodes), 'good_alignments':num_good_alignments,
-                'read_pairs':read_pairs, 'max_mem':int(max_mem)}
+    run_data = {
+      'barcodes':len(names_to_barcodes), 'good_alignments':num_good_alignments,
+      'read_pairs':read_pairs, 'max_mem':int(max_mem)
+    }
     call.send_data('end', run_time=run_time, run_data=run_data)
 
 
@@ -218,62 +226,30 @@ def detect_format(reads_file, max_lines=7):
 
 
 def read_fastaq(reads_file):
-  filename = reads_file.name
+  filename = reads_file.name.lower()
   if filename.endswith('.fa') or filename.endswith('.fasta'):
     format = 'fasta'
   elif filename.endswith('.fq') or filename.endswith('.fastq'):
     format = 'fastq'
   else:
     format = detect_format(reads_file)
-  if format == 'fasta':
-    return read_fasta(reads_file)
-  elif format == 'fastq':
-    return read_fastq(reads_file)
-
-
-def read_fasta(reads_file):
-  """Read a FASTA file, yielding read names and sequences.
-  NOTE: This assumes sequences are only one line!"""
-  line_num = 0
-  for line_raw in reads_file:
-    line = line_raw.rstrip('\r\n')
-    line_num += 1
-    if line_num % 2 == 1:
-      assert line.startswith('>'), line
-      read_name = line[1:]
-    elif line_num % 2 == 0:
-      read_seq = line
-      yield read_name, read_seq
-
-
-def read_fastq(reads_file):
-  """Read a FASTQ file, yielding read names and sequences.
-  NOTE: This assumes sequences are only one line!"""
-  line_num = 0
-  for line in reads_file:
-    line_num += 1
-    if line_num % 4 == 1:
-      assert line.startswith('@'), line
-      read_name = line[1:].rstrip('\r\n')
-    elif line_num % 4 == 2:
-      read_seq = line.rstrip('\r\n')
-      yield read_name, read_seq
+  return getreads.getparser(reads_file, filetype=format)
 
 
 def map_names_to_barcodes(reads_file, limit=None):
   """Map barcode names to their sequences."""
   names_to_barcodes = {}
   read_num = 0
-  for read_name, read_seq in read_fastaq(reads_file):
+  for read in read_fastaq(reads_file):
     read_num += 1
     if limit is not None and read_num > limit:
       break
     try:
-      name = int(read_name)
+      name = int(read.name)
     except ValueError:
-      logging.critical('Non-int read name "{}"'.format(read_name))
+      logging.critical(f'Non-int read name {read.name!r}')
       raise
-    names_to_barcodes[name] = read_seq
+    names_to_barcodes[name] = read.seq
   reads_file.close()
   return names_to_barcodes
 
@@ -281,69 +257,50 @@ def map_names_to_barcodes(reads_file, limit=None):
 def parse_alignment(sam_file, pos_thres, mapq_thres, dist_thres):
   """Parse the SAM file and yield reads that pass the filters.
   Returns (qname, rname, reversed)."""
-  line_num = 0
-  for line in sam_file:
-    line_num += 1
-    if line.startswith('@'):
-      logging.debug('Header line ({})'.format(line_num))
-      continue
-    fields = line.split('\t')
-    logging.debug('read {} -> ref {} (read seq {}):'.format(fields[2], fields[0], fields[9]))
-    qname_str = fields[0]
-    rname_str = fields[2]
-    if qname_str == rname_str:
-      logging.debug('\tRead aligned to itself.')
-      continue
-    rname_fields = rname_str.split(':')
+  for aln_num, aln in enumerate(samreader.read(sam_file), 1):
+    logging.debug(f'read {aln.rname} -> ref {aln.qname} (read seq {aln.seq}):')
+    rname_fields = aln.rname.split(':')
     if len(rname_fields) == 2 and rname_fields[1] == 'rev':
       reversed = True
       rname_str = rname_fields[0]
     else:
       reversed = False
+      rname_str = aln.rname
     try:
-      qname = int(qname_str)
+      qname = int(aln.qname)
       rname = int(rname_str)
     except ValueError:
-      if fields[2] == '*':
+      if aln.rname == '*':
         logging.debug('\tRead unmapped (reference == "*")')
         continue
       else:
-        logging.error('Non-integer read name(s) on line {}: "{}", "{}".'
-                      .format(line_num, qname, rname))
+        logging.error(
+          f'Non-integer read name(s) in alignment {aln_num}: {aln.qname!r}, {rname_str!r}.'
+        )
         raise
+    if qname == rname:
+      logging.debug('\tRead aligned to itself.')
+      continue
     # Apply alignment quality filters.
-    try:
-      flags = int(fields[1])
-      pos = int(fields[3])
-      mapq = int(fields[4])
-    except ValueError:
-      logging.warn('\tNon-integer flag ({}), pos ({}), or mapq ({})'
-                   .format(fields[1], fields[3], fields[4]))
+    if aln.flag is None or aln.pos is None or aln.mapq is None:
+      logging.warning(f'\tMissing flag ({aln.flag!r}), pos ({aln.pos!r}), or mapq ({aln.mapq!r})')
       continue
-    if flags & 4:
-      logging.debug('\tRead unmapped (flag & 4 == True)')
+    if aln.unmapped:
+      logging.debug('\tRead unmapped')
       continue
-    if abs(pos - 1) > pos_thres:
-      logging.debug('\tAlignment failed pos filter: abs({} - 1) > {}'.format(pos, pos_thres))
+    if abs(aln.pos - 1) > pos_thres:
+      logging.debug(f'\tAlignment failed pos filter: abs({aln.pos} - 1) > {pos_thres}')
       continue
-    if mapq < mapq_thres:
-      logging.debug('\tAlignment failed mapq filter: {} > {}'.format(mapq, mapq_thres))
+    if aln.mapq < mapq_thres:
+      logging.debug(f'\tAlignment failed mapq filter: {aln.mapq} > {mapq_thres}')
       continue
-    nm = None
-    for tag in fields[11:]:
-      if tag.startswith('NM:i:'):
-        try:
-          nm = int(tag[5:])
-        except ValueError:
-          logging.error('Invalid NM tag "{}" on line {}.'.format(tag, line_num))
-          raise
-        break
-    assert nm is not None, line_num
+    nm = aln.tags.get('NM')
+    if nm is None:
+      raise RuntimeError(f'Alignment missing NM tag on line {line_num}')
     if nm > dist_thres:
-      logging.debug('\tAlignment failed NM distance filter: {} > {}'.format(nm, dist_thres))
+      logging.debug(f'\tAlignment failed NM distance filter: {nm} > {dist_thres}')
       continue
     yield qname, rname, reversed
-  sam_file.close()
 
 
 def read_alignments(sam_file, names_to_barcodes, pos_thres, mapq_thres, dist_thres, limit=None):
@@ -416,10 +373,12 @@ def assert_read_ids_match(name1, name2):
   if id1 == id2:
     return True
   elif id1.endswith('/2') and id2.endswith('/1'):
-    raise ValueError('Read names not as expected. Mate 1 ends with /2 and mate 2 ends with /1:\n'
-                     '  Mate 1: {!r}\n  Mate 2: {!r}'.format(name1, name2))
+    raise ValueError(
+      f'Read names not as expected. Mate 1 ends with /2 and mate 2 ends with /1:\n'
+      f'  Mate 1: {name1!r}\n  Mate 2: {name2!r}'
+    )
   else:
-    raise ValueError('Read names "{}" and "{}" do not match.'.format(name1, name2))
+    raise ValueError(f'Read names {name1!r} and {name2!r} do not match.')
 
 
 def make_correction_table(meta_graph, family_counts, choose_by='count'):
@@ -439,13 +398,14 @@ def make_correction_table(meta_graph, family_counts, choose_by='count'):
     correct = barcodes[0]
     for barcode in barcodes:
       if barcode != correct:
-        logging.debug('Correcting {} ->\n           {}\n'.format(barcode, correct))
+        logging.debug(f'Correcting {barcode} ->\n           {correct}\n')
         corrections[barcode] = correct
   return corrections
 
 
-def print_corrected_output(families_file, corrections, reversed_barcodes, prepend=False, limit=None,
-                           output=True):
+def print_corrected_output(
+    families_file, corrections, reversed_barcodes, prepend=False, limit=None, output=True
+  ):
   line_num = 0
   barcode_num = 0
   barcode_last = None
@@ -462,7 +422,7 @@ def print_corrected_output(families_file, corrections, reversed_barcodes, prepen
     if raw_barcode != barcode_last:
       # We just started a new family.
       barcode_num += 1
-      family_info = '{}\t{}\t{}'.format(barcode_last, reads[0], reads[1])
+      family_info = f'{barcode_last}\t{reads[0]}\t{reads[1]}'
       if corrections_in_this_family:
         corrected['reads'] += corrections_in_this_family
         corrected['barcodes'] += 1
@@ -508,8 +468,10 @@ def print_corrected_output(families_file, corrections, reversed_barcodes, prepen
   if corrections_in_this_family:
     corrected['reads'] += corrections_in_this_family
     corrected['barcodes'] += 1
-  logging.info('Corrected {barcodes} barcodes on {reads} read pairs, with {reversed} reversed.'
-               .format(**corrected))
+  logging.info(
+    'Corrected {barcodes} barcodes on {reads} read pairs, with {reversed} reversed.'
+    .format(**corrected)
+  )
 
 
 def is_alignment_reversed(barcode1, barcode2):
@@ -562,9 +524,10 @@ def is_centralized(graph, family_counts):
     counts2 = family_counts[barcode2]
     total1 = counts1['all']
     total2 = counts2['all']
-    logging.debug('{}: {:3d} ({}/{})\n{}: {:3d} ({}/{})\n'
-                  .format(barcode1, total1, counts1['ab'], counts1['ba'],
-                          barcode2, total2, counts2['ab'], counts2['ba']))
+    logging.debug(
+      f'{barcode1}: {total1:3d} ({counts1["ab"]}/{counts1["ba"]})\n'
+      f'{barcode2}: {total2:3d} ({counts2["ab"]}/{counts2["ba"]})'
+    )
     if (total1 >= 1 and total2 == 1) or (total1 == 1 and total2 >= 1):
       return True
     else:
@@ -580,7 +543,7 @@ def is_centralized(graph, family_counts):
           if counts['all'] > 1:
             return False
         except TypeError:
-          logging.critical('barcode: {}, counts: {}'.format(barcode, counts))
+          logging.critical(f'barcode: {barcode}, counts: {counts}')
           raise
       first = False
     return True
@@ -676,7 +639,7 @@ def open_as_text_or_gzip(path):
   if detect_gzip(path):
     return gzip.open(path, 'r')
   else:
-    return open(path, 'rU')
+    return open(path, 'r')
 
 
 def detect_gzip(path):
