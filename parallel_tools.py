@@ -8,7 +8,7 @@ import multiprocessing.pool
 QUEUE_SIZE_MULTIPLIER = 8
 
 
-class SyncAsyncPool(multiprocessing.pool.Pool):
+class SyncAsyncPool:
   """A wrapper around multiprocessing.Pool which allows parallel processing but ordered results.
   This offers a compromise between synchronous and asynchronous processing, trying to get the
   benefits of both.
@@ -48,13 +48,15 @@ class SyncAsyncPool(multiprocessing.pool.Pool):
     else:
       self.multiproc = True
     if self.multiproc:
-      multiprocessing.pool.Pool.__init__(self, processes=processes)
+      self._pool = multiprocessing.pool.Pool(processes=processes)
+    else:
+      self._pool = None
     # Determine the number of processes.
     if processes is None or processes == 'auto':
       try:
         processes = multiprocessing.cpu_count()
       except NotImplementedError:
-        processes = self._processes
+        processes = self._pool._processes
     self.processes = processes
     # Determine the queue size.
     if queue_size is None:
@@ -81,7 +83,7 @@ class SyncAsyncPool(multiprocessing.pool.Pool):
     # Send args to multiprocessing pool worker, or execute directly in this process if we're not
     # multiprocessing.
     if self.multiproc:
-      result = self.apply_async(with_context, [self.function]+all_args, all_kwargs)
+      result = self._pool.apply_async(with_context, [self.function]+all_args, all_kwargs)
     else:
       result = FakeResult(self.function(*all_args, **all_kwargs))
     self.results.append(result)
@@ -96,11 +98,11 @@ class SyncAsyncPool(multiprocessing.pool.Pool):
 
   def close(self):
     if self.multiproc:
-      multiprocessing.pool.Pool.close(self)
+      self._pool.close()
 
   def join(self):
     if self.multiproc:
-      multiprocessing.pool.Pool.join(self)
+      self._pool.join()
 
 
 class FakeResult(object):
