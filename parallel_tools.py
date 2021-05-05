@@ -7,6 +7,7 @@ import multiprocessing.pool
 
 QUEUE_SIZE_MULTIPLIER = 8
 
+
 class SyncAsyncPool(multiprocessing.pool.Pool):
   """A wrapper around multiprocessing.Pool which allows parallel processing but ordered results.
   This offers a compromise between synchronous and asynchronous processing, trying to get the
@@ -17,15 +18,10 @@ class SyncAsyncPool(multiprocessing.pool.Pool):
   It allows giving a callback which will be executed in the parent process. It will also be given
   results in the same order they were submitted."""
 
-  def __init__(self,
-               function,
-               processes=None,
-               queue_size=None,
-               static_args=(),
-               static_kwargs=None,
-               callback=None,
-               callback_args=()
-              ):
+  def __init__(
+    self, function, processes=None, queue_size=None, static_args=(), static_kwargs=None,
+    callback=None, callback_args=()
+  ):
     """Create a new SyncAsyncPool.
     processes can be None, "auto", an integer 0 or greater, or something that produces an integer
       >= 0 when converted with int(). None or "auto" mean to use as many subprocesses as there are

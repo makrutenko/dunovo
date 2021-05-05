@@ -46,7 +46,7 @@ def make_argparser():
   wrapper.width = wrapper.width - 24
   io = parser.add_argument_group('Inputs and outputs')
   io.add_argument('infile', metavar='families.msa.tsv', nargs='?', default=sys.stdin,
-                  type=argparse.FileType('r'),
+    type=argparse.FileType('r'),
     help=wrap('The output of align_families.py. 6 columns:\n'
               '1. (canonical) barcode\n'
               '2. order ("ab" or "ba")\n'
@@ -66,8 +66,8 @@ def make_argparser():
     help=wrap('Save the single-strand consensus sequences (mate 2) in this file (FASTA format). '
               'Warning: This will be overwritten if it exists!'))
   io.add_argument('-F', '--qual-format', choices=QUAL_OFFSETS.keys(), default='sanger',
-    help=wrap('FASTQ quality score format. Sanger scores are assumed to begin at \'{}\' ({}). '
-              'Default: %(default)s.'.format(QUAL_OFFSETS['sanger'], chr(QUAL_OFFSETS['sanger']))))
+    help=wrap('FASTQ quality score format. Sanger scores are assumed to begin at '
+              f"{QUAL_OFFSETS['sanger']} ({chr(QUAL_OFFSETS['sanger'])!r}). Default: %(default)s."))
   io.add_argument('--fastq-out', metavar='PHRED_SCORE', type=int,
     help=wrap('Output in FASTQ instead of FASTA. You must specify the quality score to give to all '
               'bases. There is no meaningful quality score we can automatically give, so you will '
@@ -118,8 +118,8 @@ def make_argparser():
               'as there are CPU cores. Default: %(default)s.'))
   misc.add_argument('--queue-size', type=int,
     help=wrap('How long to go accumulating responses from worker subprocesses before dealing '
-              'with all of them. Default: {} * the number of worker --processes.'
-              .format(parallel_tools.QUEUE_SIZE_MULTIPLIER)))
+              f'with all of them. Default: {parallel_tools.QUEUE_SIZE_MULTIPLIER} * the number of '
+              'worker --processes.'))
   misc.add_argument('-v', '--version', action='version', version=str(version.get_version()),
     help=wrap('Print the version number and exit.'))
   misc.add_argument('-h', '--help', action='store_true',
@@ -142,13 +142,12 @@ def main(argv):
   start_time = time.time()
   # If the user requested, report back some data about the start of the run.
   if args.phone_home:
-    call = phone.Call(__file__, version.get_version(), platform=args.platform, test=args.test,
-                      fail='warn')
+    call = phone.Call(
+      __file__, version.get_version(), platform=args.platform, test=args.test, fail='warn'
+    )
     call.send_data('start')
     data = {
-      'stdin': args.infile is sys.stdin,
-      'processes': args.processes,
-      'queue_size': args.queue_size,
+      'stdin': args.infile is sys.stdin, 'processes': args.processes, 'queue_size': args.queue_size,
     }
     if data['stdin']:
       data['input_size'] = None
@@ -172,37 +171,30 @@ def main(argv):
     else:
       # Output FASTQ.
       if qual_start+args.fastq_out > 126:
-        fail('Error: --fastq-out PHRED score ({}) is too large.'.format(args.fastq_out))
+        fail(f'Error: --fastq-out PHRED score ({args.fastq_out}) is too large.')
       output_qual = chr(qual_start+args.fastq_out)
     if args.min_cons_reads > args.min_reads:
-      fail('Error: --min-reads must be greater than --min-cons-reads (or you\'ll have a lot of '
-           'consensus sequences with only N\'s!). If you want to exclude families with fewer than X '
-           'reads, give --min-reads X instead of --min-cons-reads X.')
+      fail(
+        "Error: --min-reads must be greater than --min-cons-reads (or you'll have a lot of "
+        "consensus sequences with only N's!). If you want to exclude families with fewer than X "
+        "reads, give --min-reads X instead of --min-cons-reads X."
+      )
     if not any((args.dcs1, args.dcs2, args.sscs1, args.sscs2)):
       fail('Error: must specify an output file!')
     # A dict of output filehandles.
     # Indexed so we can do filehandles['dcs'][mate].
-    filehandles = {
-      'dcs': (args.dcs1, args.dcs2),
-      'sscs': (args.sscs1, args.sscs2),
-    }
+    filehandles = {'dcs': (args.dcs1, args.dcs2), 'sscs': (args.sscs1, args.sscs2)}
 
     # Open a pool of worker processes.
     stats = {'time':0, 'reads':0, 'runs':0, 'duplexes':0}
     static_kwargs = {
-      'min_reads': args.min_reads,
-      'cons_thres': args.cons_thres,
-      'min_cons_reads': args.min_cons_reads,
-      'qual_thres': qual_thres,
-      'output_qual': output_qual,
+      'min_reads': args.min_reads, 'cons_thres': args.cons_thres,
+      'min_cons_reads': args.min_cons_reads, 'qual_thres': qual_thres, 'output_qual': output_qual,
     }
-    pool = parallel_tools.SyncAsyncPool(process_duplex,
-                                        processes=args.processes,
-                                        static_kwargs=static_kwargs,
-                                        queue_size=args.queue_size,
-                                        callback=process_result,
-                                        callback_args=[filehandles, stats],
-                                       )
+    pool = parallel_tools.SyncAsyncPool(
+      process_duplex, processes=args.processes, static_kwargs=static_kwargs,
+      queue_size=args.queue_size, callback=process_result, callback_args=[filehandles, stats],
+    )
     try:
       process_families(args.infile, pool, stats)
     finally:
@@ -221,13 +213,14 @@ def main(argv):
     # Final stats on the run.
     run_time = int(time.time() - start_time)
     max_mem = get_max_mem()
-    logging.info('Processed {} reads and {} duplexes in {} seconds.'
-                 .format(stats['total_reads'], stats['runs'], run_time))
+    logging.info(
+      f"Processed {stats['total_reads']} reads and {stats['runs']} duplexes in {run_time} seconds."
+    )
     if stats['reads'] > 0 and stats['runs'] > 0:
       per_read = stats['time'] / stats['reads']
       per_run = stats['time'] / stats['runs']
-      logging.info('{:0.3f}s per read, {:0.3f}s per run.'.format(per_read, per_run))
-    logging.info('in {}s total time and {:0.2f}MB RAM.'.format(run_time, max_mem))
+      logging.info(f'{per_read:0.3f}s per read, {per_run:0.3f}s per run.')
+    logging.info(f'in {run_time}s total time and {max_mem:0.2f}MB RAM.')
 
   except (Exception, KeyboardInterrupt) as exception:
     if args.phone_home and call:
@@ -328,28 +321,29 @@ def get_run_data(stats, pool, max_mem=None):
   return run_data
 
 
-def process_duplex(duplex, barcode, min_reads=3, cons_thres=0.5, min_cons_reads=0, qual_thres=' ',
-                   output_qual=None):
+def process_duplex(
+  duplex, barcode, min_reads=3, cons_thres=0.5, min_cons_reads=0, qual_thres=' ', output_qual=None
+):
   """Create duplex consensus sequences for the reads from one barcode."""
   # The code in the main loop used to ensure that "duplex" contains only reads belonging to one final
   # duplex consensus read: ab.1 and ba.2 reads OR ab.2 and ba.1 reads. (Of course, one half might
   # be missing).
   famsizes = ', '.join([str(len(family)) for family in duplex.values()])
-  logging.info('Starting duplex {}: {}'.format(barcode, famsizes))
+  logging.info(f'Starting duplex {barcode}: {famsizes}')
   start = time.time()
   # Construct consensus sequences.
   try:
     sscss = make_sscss(duplex, min_reads, cons_thres, min_cons_reads, qual_thres)
     dcss = make_dcss(sscss)
   except AssertionError:
-    logging.exception('While processing duplex {}:'.format(barcode))
+    logging.exception(f'While processing duplex {barcode}:')
     raise
   # Format output.
   dcs_strs, sscs_strs = format_outputs(dcss, sscss, barcode, output_qual)
   # Calculate run statistics.
   elapsed = time.time() - start
   total_reads = sum([len(family) for family in duplex.values()])
-  logging.debug('{} sec for {} reads.'.format(elapsed, total_reads))
+  logging.debug(f'{elapsed} sec for {total_reads} reads.')
   if len(sscss) > 0:
     run_stats = {'time':elapsed, 'runs':1, 'reads':total_reads}
   else:
@@ -361,11 +355,11 @@ def make_sscss(duplex, min_reads, cons_thres, min_cons_reads, qual_thres):
   """Create single-strand consensus sequences from families of raw reads."""
   sscss = {}
   for (order, mate), family in duplex.items():
-    # logging.info('\t{0}.{1}:'.format(order, mate))
+    # logging.info(f'\t{order}.{mate}:')
     # for read in family:
     #   logging.info('\t\t{name}\t{seq}'.format(**read))
     if len(family) < min_reads:
-      logging.debug('\tnot enough reads ({} < {})'.format(len(family), min_reads))
+      logging.debug(f'\tnot enough reads ({len(family)} < {min_reads})')
       continue
     sscs = make_sscs(family, order, mate, qual_thres, cons_thres, min_cons_reads)
     sscss[(order, mate)] = sscs
@@ -375,12 +369,9 @@ def make_sscss(duplex, min_reads, cons_thres, min_cons_reads, qual_thres):
 def make_sscs(family, order, mate, qual_thres, cons_thres, min_cons_reads):
   seqs = [read['seq'] for read in family]
   quals = [read['qual'] for read in family]
-  consensus_seq = consensus.get_consensus(seqs,
-                                          quals,
-                                          cons_thres=cons_thres,
-                                          min_reads=min_cons_reads,
-                                          qual_thres=qual_thres
-                                         )
+  consensus_seq = consensus.get_consensus(
+    seqs, quals, cons_thres=cons_thres, min_reads=min_cons_reads, qual_thres=qual_thres
+  )
   return {'seq':consensus_seq, 'order':order, 'mate':mate, 'nreads':len(family)}
 
 
@@ -408,7 +399,7 @@ def make_dcss(sscss):
       break
     align = swalign.smith_waterman(sscs_pair[0]['seq'], sscs_pair[1]['seq'])
     if len(align.target) != len(align.query):
-      message = '{} != {}:\n'.format(len(align.target), len(align.query))
+      message = f'{len(align.target)} != {len(align.query)}:\n'
       message += '\n'.join([repr(sscs) for sscs in sscs_pair])
       raise AssertionError(message)
     seq = consensus.build_consensus_duplex_simple(align.target, align.query)
@@ -435,8 +426,9 @@ def format_outputs(dcss, sscss, barcode, output_qual=None):
           sscs_str_pair.append('>{bar}.{order} {nreads}\n{seq}\n'.format(bar=barcode, **sscs))
         else:
           quals = output_qual * len(sscs['seq'])
-          sscs_str_pair.append('@{bar}.{order} {nreads}\n{seq}\n+\n{quals}\n'
-                               .format(bar=barcode, quals=quals, **sscs))
+          sscs_str_pair.append(
+            '@{bar}.{order} {nreads}\n{seq}\n+\n{quals}\n'.format(bar=barcode, quals=quals, **sscs)
+          )
     if len(sscs_str_pair) == 2:
       sscs_strs[order] = sscs_str_pair
   # DCS
@@ -447,11 +439,10 @@ def format_outputs(dcss, sscss, barcode, output_qual=None):
       dcs = dcss[duplex_mate]
       nreads_str = '-'.join([str(nreads) for nreads in dcs['nreads']])
       if output_qual is None:
-        dcs_str = '>{bar} {nreads}\n{seq}\n'.format(bar=barcode, nreads=nreads_str, seq=dcs['seq'])
+        dcs_str = f">{barcode} {nreads_str}\n{dcs['seq']}\n"
       else:
         quals = output_qual * len(dcs['seq'])
-        dcs_str = '@{bar} {nreads}\n{seq}\n+\n{quals}\n'.format(bar=barcode, nreads=nreads_str,
-                                                                seq=dcs['seq'], quals=quals)
+        dcs_str = f"@{barcode} {nreads_str}\n{dcs['seq']}\n+\n{quals}\n"
       dcs_strs.append(dcs_str)
   return dcs_strs, sscs_strs
 
