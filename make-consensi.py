@@ -10,6 +10,10 @@ import parallel_tools
 import consensus
 import swalign
 import shims
+try:
+  from bfx import pair_align
+except ImportError:
+  pair_align = None
 # There can be problems with the submodules, but none are essential.
 # Try to load these modules, but if there's a problem, load a harmless dummy and continue.
 simplewrap = shims.get_module_or_shim('utillib.simplewrap')
@@ -40,8 +44,10 @@ def make_argparser():
 
   wrapper = simplewrap.Wrapper()
   wrap = wrapper.wrap
-  parser = argparse.ArgumentParser(usage=USAGE, description=wrap(DESCRIPTION), add_help=False,
-                                   formatter_class=argparse.RawTextHelpFormatter)
+  parser = argparse.ArgumentParser(
+    usage=USAGE, description=wrap(DESCRIPTION), add_help=False,
+    formatter_class=argparse.RawTextHelpFormatter
+  )
 
   wrapper.width = wrapper.width - 24
   io = parser.add_argument_group('Inputs and outputs')
@@ -88,6 +94,11 @@ def make_argparser():
     help=wrap('The absolute threshold to use when making consensus sequences. The consensus base '
               'must be present in more than this number of reads, or N will be used as the '
               'consensus base instead. Default: %(default)s'))
+  params.add_argument('-a', '--aligner', choices=('swalign', 'biopython'), default='swalign',
+    help=wrap("Which pairwise alignment library to use. 'swalign' uses a custom Smith-Waterman "
+              "implementation by Nicolaus Lance Hepler and is the old default. 'biopython' uses "
+              "BioPython's PairwiseAligner and a substitution matrix built by the Bioconductor's "
+              'Biostrings package.'))
   phoning = parser.add_argument_group('Feedback')
   phoning.add_argument('--phone-home', action='store_true',
     help=wrap('Report helpful usage data to the developer, to better understand the use cases and '
@@ -108,7 +119,7 @@ def make_argparser():
     help=wrap('Print log messages to this file instead of to stderr. Warning: Will overwrite the '
               'file.'))
   log.add_argument('-Q', '--quiet', dest='volume', action='store_const', const=logging.CRITICAL,
-                   default=logging.WARNING)
+    default=logging.WARNING)
   log.add_argument('-V', '--verbose', dest='volume', action='store_const', const=logging.INFO)
   log.add_argument('-D', '--debug', dest='volume', action='store_const', const=logging.DEBUG)
   misc = parser.add_argument_group('Miscellaneous')
@@ -122,7 +133,7 @@ def make_argparser():
               'worker --processes.'))
   misc.add_argument('-v', '--version', action='version', version=str(version.get_version()),
     help=wrap('Print the version number and exit.'))
-  misc.add_argument('-h', '--help', action='store_true',
+  misc.add_argument('-h', '--help', action='help',
     help='Print this text on usage and arguments.')
 
   return parser
@@ -132,9 +143,6 @@ def main(argv):
 
   parser = make_argparser()
   args = parser.parse_args(argv[1:])
-  if args.help:
-    parser.print_help()
-    return 0
 
   logging.basicConfig(stream=args.log, level=args.volume, format='%(message)s')
   tone_down_logger()
@@ -179,7 +187,13 @@ def main(argv):
         "consensus sequences with only N's!). If you want to exclude families with fewer than X "
         "reads, give --min-reads X instead of --min-cons-reads X."
       )
+    if args.aligner == 'biopython' and pair_align is None:
+      fail(
+        'Error: Could not import pair_align module. Make sure BioPython is installed if you want '
+        "to use the 'biopython' --aligner."
+      )
     if not any((args.dcs1, args.dcs2, args.sscs1, args.sscs2)):
+      parser.print_usage()
       fail('Error: must specify an output file!')
     # A dict of output filehandles.
     # Indexed so we can do filehandles['dcs'][mate].
@@ -188,8 +202,8 @@ def main(argv):
     # Open a pool of worker processes.
     stats = {'time':0, 'reads':0, 'runs':0, 'duplexes':0}
     static_kwargs = {
-      'min_reads': args.min_reads, 'cons_thres': args.cons_thres,
-      'min_cons_reads': args.min_cons_reads, 'qual_thres': qual_thres, 'output_qual': output_qual,
+      'min_reads': args.min_reads, 'cons_thres': args.cons_thres, 'qual_thres': qual_thres,
+      'min_cons_reads': args.min_cons_reads, 'output_qual': output_qual, 'aligner': args.aligner
     }
     pool = parallel_tools.SyncAsyncPool(
       process_duplex, processes=args.processes, static_kwargs=static_kwargs,
@@ -322,7 +336,8 @@ def get_run_data(stats, pool, max_mem=None):
 
 
 def process_duplex(
-  duplex, barcode, min_reads=3, cons_thres=0.5, min_cons_reads=0, qual_thres=' ', output_qual=None
+  duplex, barcode, min_reads=3, cons_thres=0.5, min_cons_reads=0, qual_thres=' ', output_qual=None,
+  aligner='swalign'
 ):
   """Create duplex consensus sequences for the reads from one barcode."""
   # The code in the main loop used to ensure that "duplex" contains only reads belonging to one final
@@ -334,7 +349,7 @@ def process_duplex(
   # Construct consensus sequences.
   try:
     sscss = make_sscss(duplex, min_reads, cons_thres, min_cons_reads, qual_thres)
-    dcss = make_dcss(sscss)
+    dcss = make_dcss(sscss, aligner=aligner)
   except AssertionError:
     logging.exception(f'While processing duplex {barcode}:')
     raise
@@ -375,7 +390,7 @@ def make_sscs(family, order, mate, qual_thres, cons_thres, min_cons_reads):
   return {'seq':consensus_seq, 'order':order, 'mate':mate, 'nreads':len(family)}
 
 
-def make_dcss(sscss):
+def make_dcss(sscss, aligner='swalign'):
   # ordermates is the mapping between the duplex consensus mate number and the order/mates of the
   # SSCSs it's composed of. It's arbitrary but consistent, to make sure the duplex consensuses have
   # different mate numbers, and they're the same from run to run.
@@ -397,7 +412,10 @@ def make_dcss(sscss):
       # If we didn't find two SSCSs for this duplex mate, we can't make a complete pair of duplex
       # consensus sequences.
       break
-    align = swalign.smith_waterman(sscs_pair[0]['seq'], sscs_pair[1]['seq'])
+    if aligner == 'swalign':
+      align = swalign.smith_waterman(sscs_pair[0]['seq'], sscs_pair[1]['seq'])
+    elif aligner == 'biopython':
+      align = pair_align.align(sscs_pair[0]['seq'], sscs_pair[1]['seq'])
     if len(align.target) != len(align.query):
       message = f'{len(align.target)} != {len(align.query)}:\n'
       message += '\n'.join([repr(sscs) for sscs in sscs_pair])
