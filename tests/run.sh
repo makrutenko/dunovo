@@ -263,17 +263,17 @@ function consensi {
 # make-consensi.py with 3 processes
 function consensi_p3 {
   _consensi families.msa.tsv families.sscs_1.fa families.sscs_2.fa families.dcs_1.fa \
-            families.dcs_2.fa -p 3
+            families.dcs_2.fa --processes 3
 }
 
 # make-consensi.py quality score consideration
 function consensi_qual {
-  _consensi qual.msa.tsv qual.10.sscs_1.fa qual.10.sscs_2.fa empty.txt empty.txt -q 10
-  _consensi qual.msa.tsv qual.20.sscs_1.fa qual.20.sscs_2.fa empty.txt empty.txt -q 20
+  _consensi qual.msa.tsv qual.10.sscs_1.fa qual.10.sscs_2.fa empty.txt empty.txt --qual 10
+  _consensi qual.msa.tsv qual.20.sscs_1.fa qual.20.sscs_2.fa empty.txt empty.txt --qual 20
 }
 
 function consensi_gapqual {
-  _consensi gapqual.msa.tsv gapqual.sscs_1.fa gapqual.sscs_2.fa empty.txt empty.txt -q 25
+  _consensi gapqual.msa.tsv gapqual.sscs_1.fa gapqual.sscs_2.fa empty.txt empty.txt --qual 25
 }
 
 function consensi_consthres {
@@ -449,7 +449,7 @@ function _consensi {
   done
   echo -e "\t${FUNCNAME[1]}:\tmake-consensi.py ${args[@]} ::: $input:"
   if ! local_prefix=$(_get_local_prefix "$cmd_prefix" make-consensi.py); then return 1; fi
-  "${local_prefix}make-consensi.py" ${args[@]} "$dirname/$input" \
+  "${local_prefix}make-consensi.py" --aligner biopython ${args[@]} "$dirname/$input" \
     --sscs1 "$dirname/cons.tmp.sscs_1.fa" --sscs2 "$dirname/cons.tmp.sscs_2.fa" \
     --dcs1  "$dirname/cons.tmp.dcs_1.fa"  --dcs2  "$dirname/cons.tmp.dcs_2.fa"
   diff -s "$dirname/cons.tmp.sscs_1.fa" "$dirname/$sscs1"
