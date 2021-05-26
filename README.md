@@ -38,8 +38,10 @@ It also requires several standard Unix tools. Version numbers in parentheses are
 
 #### Optional
 
-To use `align-families.py`'s `-a mafft` option, this command must be available on your `$PATH`:  
+To use `align-families.py`'s `--aligner mafft` option, this command must be available on your `$PATH`:  
  - [`mafft`](http://mafft.cbrc.jp/alignment/software/) (v7.271 or v7.123b)
+
+To use `make-consensi.py`'s `--aligner biopython` option, you'll need to install [BioPython](https://biopython.org). Version 1.75 or higher is preferred, but lower ones will also likely work.
 
 To use the barcode error correction scripts `baralign.sh` and `correct.py`, the following module must be available from Python:
  - [networkx](https://pypi.python.org/pypi/networkx) (2.4)
