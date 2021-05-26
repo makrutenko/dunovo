@@ -8,8 +8,8 @@ import resource
 import collections
 import parallel_tools
 import consensus
-import swalign
 import shims
+from bfx import swalign
 try:
   from bfx import pair_align
 except ImportError:
@@ -412,17 +412,25 @@ def make_dcss(sscss, aligner='swalign'):
       # If we didn't find two SSCSs for this duplex mate, we can't make a complete pair of duplex
       # consensus sequences.
       break
+    seq1 = sscs_pair[0]['seq']
+    seq2 = sscs_pair[1]['seq']
     if aligner == 'swalign':
-      align = swalign.smith_waterman(sscs_pair[0]['seq'], sscs_pair[1]['seq'])
+      # `local` here doesn't actually mean a local alignment. It just trims unaligned portions from
+      # the ends of the alignment.
+      align = swalign.smith_waterman(seq1, seq2, local=True)
     elif aligner == 'biopython':
-      align = pair_align.align(sscs_pair[0]['seq'], sscs_pair[1]['seq'])
+      align = pair_align.align(seq1, seq2, scope='global', trim='true')
+      if align is None:
+        # There was no successful alignment. Skip this family, since we can't make a duplex
+        # consensus without both SSCSs.
+        break
     if len(align.target) != len(align.query):
       message = f'{len(align.target)} != {len(align.query)}:\n'
       message += '\n'.join([repr(sscs) for sscs in sscs_pair])
       raise AssertionError(message)
-    seq = consensus.build_consensus_duplex_simple(align.target, align.query)
+    dcs_seq = consensus.build_consensus_duplex_simple(align.target, align.query)
     reads_per_strand = [sscs['nreads'] for sscs in sscs_pair]
-    dcss.append({'seq':seq, 'nreads':reads_per_strand})
+    dcss.append({'seq':dcs_seq, 'nreads':reads_per_strand})
   assert len(dcss) == 0 or len(dcss) == 2, len(dcss)
   return dcss
 
