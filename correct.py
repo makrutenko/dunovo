@@ -50,12 +50,15 @@ def make_argparser():
     help='Choose the "correct" barcode in a network of related barcodes by either the count of how '
       'many times the barcode was observed ("freq") or how connected the barcode is to the others '
       'in the network ("connect").')
+  parser.add_argument('-N', '--allow-no-nm-if-ns', action='store_true',
+    help='Allow alignments with missing NM tags if the barcode has at least one N. Otherwise this '
+      'will fail if it encounters an alignment missing an NM tag.')
   parser.add_argument('-I', '--no-check-ids', dest='check_ids', action='store_false', default=True,
     help="Don't check to make sure read pairs have identical ids. By default, if this encounters a "
       "pair of reads in families.tsv with ids that aren't identical (minus an ending /1 or /2), it "
       "will throw an error.")
   parser.add_argument('--limit', type=int,
-    help='Limit the number of lines that will be read from each input file, for testing purposes.')
+    help='Limit the number of entries that will be read from each input file, for testing purposes.')
   parser.add_argument('-S', '--structures', action='store_true',
     help='Print a list of the unique isoforms')
   parser.add_argument('--struct-human', action='store_true')
@@ -118,7 +121,9 @@ def main(argv):
     names_to_barcodes = map_names_to_barcodes(args.reads, args.limit)
 
     logging.info('Reading the SAM to build the graph of barcode relationships..')
-    passing_alignments = filter_alignment(args.sam, args.pos, args.mapq, args.dist, args.limit)
+    passing_alignments = filter_alignment(
+      args.sam, args.pos, args.mapq, args.dist, args.limit, args.allow_no_nm_if_ns
+    )
     graph, reversed_barcodes, num_good_alignments = read_alignments(
       passing_alignments, names_to_barcodes
     )
@@ -255,7 +260,9 @@ def map_names_to_barcodes(reads_file, limit=None):
   return names_to_barcodes
 
 
-def filter_alignment(sam_file, pos_thres, mapq_thres, dist_thres, limit=None):
+def filter_alignment(
+    sam_file, pos_thres, mapq_thres, dist_thres, limit=None, allow_no_nm_if_ns=False
+  ):
   """Read the SAM file and yield reads that pass the filters.
   Returns (qname, rname, reversed)."""
   for aln_num, aln in enumerate(samreader.read(sam_file), 1):
@@ -300,10 +307,11 @@ def filter_alignment(sam_file, pos_thres, mapq_thres, dist_thres, limit=None):
     nm = aln.tags.get('NM')
     if nm is None:
       if 'N' in aln.seq:
-        logging.info(f"\tAlignment missing NM tag, but likely due to N's in sequence: {aln.seq!r}")
-        continue
-      else:
-        raise RuntimeError(f'Alignment missing NM tag in alignment {aln_num}')
+        if allow_no_nm_if_ns:
+          logging.info(f"\tAlignment missing NM tag, but likely due to N's in sequence: {aln.seq!r}")
+          continue
+        else:
+          raise RuntimeError(f'Alignment missing NM tag in alignment {aln_num}')
     if nm > dist_thres:
       logging.debug(f'\tAlignment failed NM distance filter: {nm} > {dist_thres}')
       continue
