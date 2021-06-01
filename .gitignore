@@ -10,6 +10,7 @@
 *.fai
 .venv
 test.*
+tmp
 misc
 align
 consensus
