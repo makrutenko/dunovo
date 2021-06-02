@@ -411,7 +411,7 @@ def make_dcss(sscss, aligner='swalign'):
     if len(sscs_pair) < 2:
       # If we didn't find two SSCSs for this duplex mate, we can't make a complete pair of duplex
       # consensus sequences.
-      break
+      return []
     seq1 = sscs_pair[0]['seq']
     seq2 = sscs_pair[1]['seq']
     if aligner == 'swalign':
@@ -421,9 +421,9 @@ def make_dcss(sscss, aligner='swalign'):
     elif aligner == 'biopython':
       align = pair_align.align(seq1, seq2, scope='global', trim='true')
       if align is None:
-        # There was no successful alignment. Skip this family, since we can't make a duplex
-        # consensus without both SSCSs.
-        break
+        # There was no successful alignment. Skip this family, since we can't make a complete pair
+        # of duplex consensus sequences.
+        return []
     if len(align.target) != len(align.query):
       message = f'{len(align.target)} != {len(align.query)}:\n'
       message += '\n'.join([repr(sscs) for sscs in sscs_pair])
