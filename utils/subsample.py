@@ -113,14 +113,7 @@ def find_chosen_reads(input_reads, read_names):
 
 def write_reads(reads, outfile):
   for read in reads:
-    print(format_read(read), file=outfile)
-
-
-def format_read(read):
-  return f"""@{read.name}
-{read.seq}
-+
-{read.qual}"""
+    print(read.to_fastq(), file=outfile)
 
 
 def fail(message):

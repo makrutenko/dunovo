@@ -1,16 +1,29 @@
-import collections
+import typing
+from bfx.getreads import Read
 
-# A pair of `StrandFamily`s with the same barcode. 
-BarFamily = collections.namedtuple('BarFamily', ('bar', 'ab', 'ba'))
-
-# A pair of `ReadFamily`s with the same order and barcode.
-StrandFamily = collections.namedtuple('StrandFamily', ('order', 'mate1', 'mate2'))
+# NamedTuple has been chosen over dataclasses for performance reasons.
+# This module is intended to be usable by the main Du Novo scripts, for which performance and memory
+# usage is an important constraint. And it seems dataclasses still have higher memory usage than
+# NamedTuples:
+# https://stackoverflow.com/questions/51671699/data-classes-vs-typing-namedtuple-primary-use-cases/51673969#51673969
 
 # A set of `Read`s with the same mate, order, and barcode.
-ReadFamily = collections.namedtuple('ReadFamily', ('mate', 'reads'))
+class ReadFamily(typing.NamedTuple):
+  mate: int
+  reads: typing.Iterable[Read]
 
-# A single read.
-Read = collections.namedtuple('Read', ('name', 'seq', 'quals'))
+# A pair of `ReadFamily`s with the same order and barcode.
+class StrandFamily(typing.NamedTuple):
+  order: str
+  mate1: ReadFamily
+  mate2: ReadFamily
+
+# A pair of `StrandFamily`s with the same barcode.
+class BarFamily(typing.NamedTuple):
+  bar: str
+  ab: StrandFamily
+  ba: StrandFamily
+
 
 class DunovoFormatError(ValueError):
   pass
