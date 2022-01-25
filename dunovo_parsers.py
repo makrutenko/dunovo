@@ -11,18 +11,72 @@ from bfx.getreads import Read
 class ReadFamily(typing.NamedTuple):
   mate: int
   reads: typing.Iterable[Read]
+  def get_summary(self):
+    return f'mate{self.mate}: {len(self.reads)}'
+  def __getitem__(self, index):
+    return self.reads[index]
+  def __bool__(self):
+    return bool(self.reads)
 
 # A pair of `ReadFamily`s with the same order and barcode.
 class StrandFamily(typing.NamedTuple):
   order: str
   mate1: ReadFamily
   mate2: ReadFamily
+  def get_summary(self):
+    summaries = []
+    for mate in 'mate1', 'mate2':
+      read_family = getattr(self, mate, None)
+      if read_family:
+        summaries.append(read_family.get_summary())
+      else:
+        summaries.append(f'{mate}: None')
+    return f'{self.order}: ({summaries[0]}, {summaries[1]})'
+  def __getitem__(self, keys):
+    try:
+      len(keys)
+    except TypeError:
+      mate = keys
+      index = None
+    else:
+      mate, index = keys
+    read_family = getattr(self, f'mate{mate}')
+    if read_family is None or index is None:
+      return read_family
+    return read_family[index]
+  def __bool__(self):
+    return bool(self.mate1 or self.mate2)
 
 # A pair of `StrandFamily`s with the same barcode.
 class BarFamily(typing.NamedTuple):
   bar: str
   ab: StrandFamily
   ba: StrandFamily
+  def __getitem__(self, keys):
+    mate = index = None
+    if isinstance(keys, str):
+      order = keys
+    else:
+      order = keys[0]
+      if len(keys) >= 2:
+        mate = keys[1]
+      if len(keys) >= 3:
+        index = keys[2]
+    strand_family = getattr(self, order)
+    if strand_family is None or mate is None:
+      return strand_family
+    return strand_family[mate,index]
+  def get_summary(self):
+    summaries = []
+    for order in 'ab', 'ba':
+      strand_family = getattr(self, order, None)
+      if strand_family:
+        summaries.append(strand_family.get_summary())
+      else:
+        summaries.append(f'{order}: None')
+    return f'{self.bar}: ({summaries[0]}, {summaries[1]})'
+  def __bool__(self):
+    return bool(self.ab or self.ba)
 
 
 class DunovoFormatError(ValueError):
@@ -72,8 +126,8 @@ def create_strand_family(strand_family_lines):
     if order not in ('ab', 'ba'):
       raise DunovoFormatError(f'Invalid order: {order!r}')
     assert order == last_order or last_order is None, (order, last_order)
-    read1s.append(Read(name1, seq1, quals1))
-    read2s.append(Read(name2, seq2, quals2))
+    read1s.append(Read(name=name1, seq=seq1, qual=quals1))
+    read2s.append(Read(name=name2, seq=seq2, qual=quals2))
     last_order = order
   read_family1 = ReadFamily(1, tuple(read1s))
   read_family2 = ReadFamily(2, tuple(read2s))
@@ -94,3 +148,71 @@ def create_bar_family(strand_families_raw, barcode):
     if strand_family is None:
       strand_families[i] = StrandFamily(order, ReadFamily(1,()), ReadFamily(2,()))
   return BarFamily(barcode, *strand_families)
+
+
+def parse_msa(lines):
+  bar_family = strand_family = read_family = None
+  last_mate = last_order = last_bar = None
+  for line_num, line in enumerate(lines,1):
+    # Parse the values from the line.
+    fields = line.rstrip('\r\n').split('\t')
+    if len(fields) != 6:
+      raise DunovoFormatError(f'Line {line_num} has an invalid number of columns: {len(fields)}')
+    barcode, order, mate_str, name, seq, quals = fields
+    try:
+      mate = int(mate_str)
+    except ValueError:
+      raise DunovoFormatError(f'Line {line_num} has an invalid mate column: {mate_str!r}') from None
+    print(f'Parsed line {line_num}: {barcode} {order} {mate}')
+    # Reset any families if we've started a new one, and yield the BarFamily if we've finished one.
+    if barcode != last_bar:
+      if bar_family:
+        yield bar_family
+      read_family = strand_family = bar_family = None
+    if order != last_order:
+      read_family = strand_family = None
+    if mate != last_mate:
+      read_family = None
+    # Find the right families for this line, if they exist.
+    if bar_family is not None:
+      strand_family = getattr(bar_family, order)
+    if strand_family is not None:
+      read_family = getattr(strand_family, f'mate{mate}')
+    # Create any families that don't exist yet.
+    if read_family is None:
+      print('  read_family was None. Creating.')
+      read_family = ReadFamily(mate=mate, reads=[])
+    if strand_family is None:
+      print('  strand_family was None. Creating.')
+      attrs = {'order':order, f'mate{mate}':read_family, f'mate{other_mate(mate)}':None}
+      strand_family = StrandFamily(**attrs)
+    if bar_family is None:
+      print('  bar_family was None. Creating.')
+      attrs = {'bar':barcode, order:strand_family, other_order(order):None}
+      bar_family = BarFamily(**attrs)
+    # Add the read to the ReadFamily and properly nest the families.
+    read = Read(name=name, seq=seq, qual=quals)
+    read_family.reads.append(read)
+    attrs = {f'mate{mate}':read_family}
+    strand_family = strand_family._replace(**attrs)
+    attrs = {order:strand_family}
+    bar_family = bar_family._replace(**attrs)
+    # Set the last values to the current values.
+    last_bar = barcode
+    last_order = order
+    last_mate = mate
+  if bar_family:
+    yield bar_family
+
+
+def other_mate(mate):
+  """Return the number of the other mate.
+  E.g. `other_mate(1) == 2` and `other_mate(2) == 1`"""
+  return ((mate-1) ^ 1) + 1
+
+
+def other_order(order):
+  if order == 'ab':
+    return 'ba'
+  elif order == 'ba':
+    return 'ab'
