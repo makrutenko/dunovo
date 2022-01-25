@@ -58,6 +58,12 @@ def make_tests(cls, data=(), suite=None):
 
 ########## utils/errstats.py ##########
 
+def slots_obj_to_dict(o):
+  d = {}
+  for attr in o.__slots__:
+    d[attr] = getattr(o, attr)
+  return d
+
 errstatsTests = unittest.TestSuite()
 
 class FillInGapQualsTest(unittest.TestCase):
@@ -83,7 +89,6 @@ make_tests(FillInGapQualsTest, suite=errstatsTests, data=(
   )
 )
 
-
 class GetAlignmentErrorsTest(unittest.TestCase):
   @classmethod
   def make_test(cls, consensus=None, seq_align=None, qual_align=None, qual_thres=None, errors=None,
@@ -91,9 +96,20 @@ class GetAlignmentErrorsTest(unittest.TestCase):
     def test(self):
       result = errstats.get_alignment_errors(consensus, seq_align, qual_align, qual_thres,
                                              count_indels=count_indels)
-      self.assertEqual(errors, result)
+      #TODO: This is a temporary kludge for the drift that happened between errstats.py and these
+      #      tests. It now returns Error objects instead of dicts. Ideally I should just make Error
+      #      objects comparable with `==`. Also, there's a new `read_coord` key which wasn't in the
+      #      test data. I should double-check what those values should be.
+      result_dicts = []
+      for err_obj in result:
+        err_dict = slots_obj_to_dict(err_obj)
+        del err_dict['read_coord']
+        result_dicts.append(err_dict)
+      self.assertEqual(errors, result_dicts)
     return test
 
+#TODO: The 'aln_coord' key used to be 'coord', but I changed it to align with the new return values
+#      from errstats.py. I'm pretty sure that's right, but not 100%.
 make_tests(GetAlignmentErrorsTest, suite=errstatsTests, data=(
     {'consensus':  'GATTACA', 'qual_thres':0, 'count_indels':True,
      'seq_align': ('GATTACA',
@@ -104,22 +120,22 @@ make_tests(GetAlignmentErrorsTest, suite=errstatsTests, data=(
      'seq_align': ('GATTACA',
                    'GATCACA'), 'name':'Snv',
      'qual_align':('IIIIIII',
-                   'IIIIIII'), 'errors':[{'alt':'C', 'coord':4, 'seq':1, 'type':'SNV', 'pass':True}]},
+                   'IIIIIII'), 'errors':[{'alt':'C', 'aln_coord':4, 'seq':1, 'type':'SNV', 'passes':True}]},
     {'consensus':  'GATTACA', 'qual_thres':0, 'count_indels':True,
      'seq_align': ('GATTACA',
                    'GAT-ACA'), 'name':'Del',
      'qual_align':('IIIIIII',
-                   'III III'), 'errors':[{'alt':1, 'coord':3, 'seq':1, 'type':'del', 'pass':True}]},
+                   'III III'), 'errors':[{'alt':1, 'aln_coord':3, 'seq':1, 'type':'del', 'passes':True}]},
     {'consensus':  'GAT-ACA', 'qual_thres':0, 'count_indels':True,
      'seq_align': ('GAT-ACA',
                    'GATTACA'), 'name':'Ins',
      'qual_align':('IIIIIII',
-                   'III III'), 'errors':[{'alt':'T', 'coord':3, 'seq':1, 'type':'ins', 'pass':True}]},
+                   'III III'), 'errors':[{'alt':'T', 'aln_coord':3, 'seq':1, 'type':'ins', 'passes':True}]},
     {'consensus':  'GATTACA', 'qual_thres':0, 'count_indels':False,
      'seq_align': ('GATTAGA',
                    'GAT-ACA'), 'name':'NoCountIndels',
      'qual_align':('IIIIIII',
-                   'III III'), 'errors':[{'alt':'G', 'type':'SNV', 'coord':6, 'seq':0, 'pass':True}]},
+                   'III III'), 'errors':[{'alt':'G', 'type':'SNV', 'aln_coord':6, 'seq':0, 'passes':True}]},
     {'consensus':  'GATYACA', 'qual_thres':0, 'count_indels':True,
      'seq_align': ('GATTACA',
                    'GATGACA'), 'name':'AmbigSnv',
@@ -134,48 +150,48 @@ make_tests(GetAlignmentErrorsTest, suite=errstatsTests, data=(
      'seq_align': ('GATTACA',
                    'GAT-ACA'), 'name':'AmbigAfterDel',
      'qual_align':('IIIIIII',
-                   'III III'), 'errors':[{'alt':1, 'type':'del', 'seq':1, 'coord':3, 'pass':True}]},
+                   'III III'), 'errors':[{'alt':1, 'type':'del', 'seq':1, 'aln_coord':3, 'passes':True}]},
     {'consensus':  'GATTACA', 'qual_thres':30, 'count_indels':True,
      'seq_align': ('GATTCCA',
                    'GATGACA'), 'name':'QualSnv',
      'qual_align':('IIIIIII',
-                   'III+III'), 'errors':[{'alt':'C', 'type':'SNV', 'seq':0, 'coord':5, 'pass':True}]},
+                   'III+III'), 'errors':[{'alt':'C', 'type':'SNV', 'seq':0, 'aln_coord':5, 'passes':True}]},
     {'consensus':  'GATTACA', 'qual_thres':30, 'count_indels':True,
      'seq_align': ('GATTCCA',
                    'GAT-ACA'), 'name':'QualDel',
      'qual_align':('IIIIIII',
-                   'II+ +II'), 'errors':[{'alt':'C', 'type':'SNV', 'seq':0, 'coord':5, 'pass':True}]},
+                   'II+ +II'), 'errors':[{'alt':'C', 'type':'SNV', 'seq':0, 'aln_coord':5, 'passes':True}]},
     {'consensus':  'GATTACA', 'qual_thres':30, 'count_indels':True,
      'seq_align': ('GATTACA',
                    'GAT-GCA'), 'name':'QualDelSnv',
      'qual_align':('IIIIIII',
-                   'II+ I+I'), 'errors':[{'alt':'G', 'type':'SNV', 'seq':1, 'coord':5, 'pass':True}]},
+                   'II+ I+I'), 'errors':[{'alt':'G', 'type':'SNV', 'seq':1, 'aln_coord':5, 'passes':True}]},
     {'consensus':  'GATTACA', 'qual_thres':0, 'count_indels':True,
      'seq_align': ('GATTACA',
                    'GAT---A'), 'name':'LongDel',
      'qual_align':('IIIIIII',
-                   'III   I'), 'errors':[{'alt':3, 'type':'del', 'seq':1, 'coord':3, 'pass':True}]},
+                   'III   I'), 'errors':[{'alt':3, 'type':'del', 'seq':1, 'aln_coord':3, 'passes':True}]},
     {'consensus':  'GAT---A', 'qual_thres':0, 'count_indels':True,
      'seq_align': ('GATTACA',
                    'GAT---A'), 'name':'LongIns',
      'qual_align':('IIIIIII',
-                   'III   I'), 'errors':[{'alt':'TAC', 'type':'ins', 'seq':0, 'coord':3, 'pass':True}]},
+                   'III   I'), 'errors':[{'alt':'TAC', 'type':'ins', 'seq':0, 'aln_coord':3, 'passes':True}]},
     {'consensus':  'GATTACA', 'qual_thres':30, 'count_indels':True,
      'seq_align': ('GATTACA',
                    'GAT-CCA'), 'name':'SnvAfterDel',
      'qual_align':('IIIIIII',
-                   'III III'), 'errors':[{'alt':1, 'type':'del', 'seq':1, 'coord':3, 'pass':True},
-                                         {'alt':'C', 'type':'SNV', 'seq':1, 'coord':5, 'pass':True}]},
+                   'III III'), 'errors':[{'alt':1, 'type':'del', 'seq':1, 'aln_coord':3, 'passes':True},
+                                         {'alt':'C', 'type':'SNV', 'seq':1, 'aln_coord':5, 'passes':True}]},
     {'consensus':  'GATTACA', 'qual_thres':30, 'count_indels':True,
      'seq_align': ('GATTACA',
                    'GAT-CCA'), 'name':'QualAfterDel',
      'qual_align':('IIIIIII',
-                   'III +II'), 'errors':[{'alt':1, 'type':'del', 'seq':1, 'coord':3, 'pass':True}]},
+                   'III +II'), 'errors':[{'alt':1, 'type':'del', 'seq':1, 'aln_coord':3, 'passes':True}]},
     {'consensus':  'GATTAC-', 'qual_thres':30, 'count_indels':True,
      'seq_align': ('GATTAC-',
                    'GATTACA'), 'name':'EndIns',
      'qual_align':('IIIIIII',
-                   'IIIIII '), 'errors':[{'alt':'A', 'type':'ins', 'seq':1, 'coord':6, 'pass':False}]},
+                   'IIIIII '), 'errors':[{'alt':'A', 'type':'ins', 'seq':1, 'aln_coord':6, 'passes':False}]},
   )
 )
 
