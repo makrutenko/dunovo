@@ -187,7 +187,7 @@ def open_as_text_or_gzip(path):
     file_obj = gzip.open(path, 'rt')
     file_obj.type = 'gzip'
   else:
-    file_obj = open(path, 'rU')
+    file_obj = open(path, 'r')
     file_obj.type = 'raw'
   return file_obj
 
