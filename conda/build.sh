@@ -18,10 +18,10 @@ get_submodule () {
   fi
   rm "v$version.tar.gz"
 }
-get_submodule kalign  0.2.0 makovalab-psu kalign-dunovo 473dd562f520a218df2dd147c89940422344adad6d8824141bffe6466c6d40e7
-get_submodule utillib 0.1.0 NickSto       utillib       bffe515f7bd98661657c26003c41c1224f405c3a36ddabf5bf961fab86f9651a
-get_submodule ET      0.2.2 NickSto       ET            11dc5cb02521a2260e6c88a83d489c72f819bd759aeff31d66aa40ca2f1358a6
-get_submodule bfx     0.2.0 NickSto       bfx           252d31dc260882f203d04624945c8abb4940f3ae4b03a5050182d23854488ef8
+get_submodule kalign  0.3.0       makovalab-psu kalign-dunovo c0ef2de4a958aed47311ea86591debb3bada871143a6923bc6338ab2f99f2d5b
+get_submodule utillib 0.1.1-alpha NickSto       utillib       961f5a3481d1c0dbe00c258b9df2de541e5605f3de4ff25bcc3cec22922e7c06
+get_submodule ET      0.3         NickSto       ET            6b757b3ab3634b949f78692ac0db72e9264a1dceaf7449e921091d3ad0012eea
+get_submodule bfx     0.4.0       NickSto       bfx           684f1f7bc9a8767bb1703addad1b669246723ff08915d404cecbbc1af4d3b3b3
 
 # Compile binaries and move them to lib.
 make
