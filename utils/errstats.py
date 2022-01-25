@@ -26,9 +26,9 @@ except ImportError:
   pass
 from utillib import simplewrap
 from kalign import kalign
+from bfx import swalign
 import consensus as consensuslib
 import seqtools
-import swalign
 PY3 = sys.version_info.major >= 3
 
 #TODO: Fix deduplication.

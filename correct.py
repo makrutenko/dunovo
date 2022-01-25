@@ -9,8 +9,8 @@ import resource
 import subprocess
 import networkx
 import parallel_tools
-import swalign
 import shims
+from bfx import swalign
 from bfx import samreader
 from bfx import getreads
 # There can be problems with the submodules, but none are essential.
