@@ -1,14 +1,8 @@
-#!/usr/bin/env python
-from __future__ import division
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import unicode_literals
+#!/usr/bin/env python3
 import re
 import os
 import sys
-import copy
 import errno
-import string
 import random
 import logging
 import argparse
@@ -29,7 +23,6 @@ from kalign import kalign
 from bfx import swalign
 import consensus as consensuslib
 import seqtools
-PY3 = sys.version_info.major >= 3
 
 #TODO: Fix deduplication.
 #      Currently, it uses SSCSs aligned to the reference to determine the reference coordinates
@@ -42,14 +35,8 @@ PY3 = sys.version_info.major >= 3
 
 AMBIGUOUS = set('rymkbdhvswnRYMKBDHVSWN')
 trans_args = ('acgtrymkbdhvACGTRYMKBDHV', 'tgcayrkmvhdbTGCAYRKMVHDB')
-if PY3:
-  REVCOMP_TABLE_BYTES = bytes.maketrans(bytes(trans_args[0], 'utf8'), bytes(trans_args[1], 'utf8'))
-  REVCOMP_TABLE_UNICODE = str.maketrans(*trans_args)
-else:
-  REVCOMP_TABLE_BYTES = string.maketrans(*trans_args)
-  REVCOMP_TABLE_UNICODE = {}
-  for from_char, to_char in zip(*trans_args):
-    REVCOMP_TABLE_UNICODE[ord(from_char)] = ord(to_char)
+REVCOMP_TABLE_BYTES = bytes.maketrans(bytes(trans_args[0], 'utf8'), bytes(trans_args[1], 'utf8'))
+REVCOMP_TABLE_UNICODE = str.maketrans(*trans_args)
 
 GAP_WIN_LEN = 4
 QUAL_OFFSET = 33 # Sanger
@@ -214,6 +201,15 @@ def main(argv):
   logging.basicConfig(stream=args.log, level=args.volume, format='%(message)s')
   tone_down_logger()
 
+  try:
+    pyBamParser.bam
+  except NameError:
+    message = 'Failed to import pyBamParser (required for --dedup).'
+    if args.dedup:
+      fail(message)
+    else:
+      logging.warning(message)
+
   if args.human and args.out_format == 'errors2':
     fail('Error: --alignment invalid with --out-format errors2.')
 
@@ -225,10 +221,6 @@ def main(argv):
         fail('Error: --bam file {!r} not found.'.format(args.bam))
     else:
       fail('Error: --dedup requires a --bam file to be supplied.')
-    try:
-      pyBamParser.bam
-    except NameError:
-      fail('Failed to import pyBamParser (required for --dedup).')
 
   if args.qual_errors:
     error_qual_thres = args.qual_thres
