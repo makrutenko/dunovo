@@ -10,8 +10,7 @@ sys.path.append(str(root_dir))
 import dunovo_parsers
 from bfx import getreads
 
-USAGE = "%(prog)s [options]"
-DESCRIPTION = """"""
+DESCRIPTION = """Subsample an input dataset on a per-family basis, not per read."""
 
 
 def make_argparser():
@@ -65,7 +64,7 @@ def main(argv):
   logging.info('Info: Reading input families file..')
   families = dunovo_parsers.parse_make_families(args.families, args.prepended)
   chosen_families = choose_elements(families, args.fraction)
-  mate1_names, mate2_names = get_all_read_names(chosen_families, args.fraction)
+  mate1_names, mate2_names = get_all_read_names(chosen_families)
   logging.info('Info: Filtering raw FASTQ into subsampled FASTQ (mate 1)..')
   find_and_write_chosen_reads(mate1_names, args.fastq1, args.fastq1_out)
   logging.info('Info: Filtering raw FASTQ into subsampled FASTQ (mate 2)..')
@@ -78,7 +77,7 @@ def choose_elements(elements, fraction):
       yield element
 
 
-def get_all_read_names(families, fraction):
+def get_all_read_names(families):
   all_mate1_names = set()
   all_mate2_names = set()
   for family in families:
@@ -117,7 +116,7 @@ def write_reads(reads, outfile):
 
 
 def fail(message):
-  logging.critical('Error: '+str(message))
+  logging.critical('Error: %s', message)
   if __name__ == '__main__':
     sys.exit(1)
   else:
