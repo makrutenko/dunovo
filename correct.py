@@ -269,6 +269,9 @@ def filter_alignment(
     if limit is not None and aln_num > limit:
       break
     logging.debug(f'read {aln.rname} -> ref {aln.qname} (read seq {aln.seq}):')
+    if aln.rname is None or aln.rname == '*':
+      logging.debug('\tRead unmapped (reference == "*")')
+      continue
     rname_fields = aln.rname.split(':')
     if len(rname_fields) == 2 and rname_fields[1] == 'rev':
       reversed = True
@@ -280,14 +283,10 @@ def filter_alignment(
       qname = int(aln.qname)
       rname = int(rname_str)
     except ValueError:
-      if aln.rname == '*':
-        logging.debug('\tRead unmapped (reference == "*")')
-        continue
-      else:
-        logging.error(
-          f'Non-integer read name(s) in alignment {aln_num}: {aln.qname!r}, {rname_str!r}.'
-        )
-        raise
+      logging.error(
+        f'Non-integer read name(s) in alignment {aln_num}: {aln.qname!r}, {rname_str!r}.'
+      )
+      raise
     if qname == rname:
       logging.debug('\tRead aligned to itself.')
       continue
