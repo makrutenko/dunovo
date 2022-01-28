@@ -3,8 +3,13 @@
   <description>of duplex sequencing reads</description>
   <requirements>
     <requirement type="package" version="2.15">dunovo</requirement>
+    <requirement type="package" version="4.4.18">bash</requirement>
+    <requirement type="package" version="5.0.1">gawk</requirement>
+    <requirement type="package" version="1.10">gzip</requirement>
+    <requirement type="package" version="5.39">file</requirement>
+    <!-- This uses paste, sort, readlink, and basename, which are part of coreutils. -->
+    <requirement type="package" version="8.30">coreutils</requirement>
   </requirements>
-  <!-- TODO: Add dependency on coreutils to get paste? -->
   <version_command>make-consensi.py --version</version_command>
   <command detect_errors="exit_code">make-families.sh -t $taglen -i $invariant '$fastq1' '$fastq2' &gt; '$output'
   </command>

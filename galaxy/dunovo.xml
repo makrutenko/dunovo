@@ -3,7 +3,7 @@
   <description>from duplex sequencing alignments</description>
   <requirements>
     <requirement type="package" version="2.15">dunovo</requirement>
-    <!-- TODO: require Python 2.7 -->
+    <requirement type="package" version="3.8.10">python</requirement>
   </requirements>
   <version_command>make-consensi.py --version</version_command>
   <command detect_errors="exit_code">

@@ -1,12 +1,15 @@
 <?xml version="1.0"?>
-<tool id="correct_barcodes" name="Du Novo: Correct barcodes" version="2.16">
+<tool id="correct_barcodes" name="Du Novo: Correct barcodes" version="2.15">
   <description>of duplex sequencing reads</description>
   <requirements>
+    <requirement type="package" version="2.15">dunovo</requirement>
+    <requirement type="package" version="3.8.10">python</requirement>
+    <requirement type="package" version="2.4">networkx</requirement>
     <requirement type="package" version="1.1.2">bowtie</requirement>
     <requirement type="package" version="1.9">samtools</requirement>
-    <requirement type="package" version="1.10">networkx</requirement>
-    <requirement type="package" version="2.15">dunovo</requirement>
-    <!-- TODO: require Python 3 -->
+    <requirement type="package" version="5.0.1">gawk</requirement>
+    <!-- The command uses sort, and baralign.sh uses date, readlink, and du, which are part of coreutils. -->
+    <requirement type="package" version="8.30">coreutils</requirement>
   </requirements>
   <version_command>correct.py --version</version_command>
   <command detect_errors="exit_code"><![CDATA[
