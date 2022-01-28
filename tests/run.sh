@@ -331,10 +331,10 @@ function varylen_consensi {
 
 # baralign.sh
 function baralign {
-  echo -e "\t${FUNCNAME[0]}:\tbaralign.sh ::: correct.families.tsv:"
+  echo -e "\t${FUNCNAME[0]}:\tbaralign.sh ::: correct.families.d1.tsv:"
   if ! local_prefix=$(_get_local_prefix "$cmd_prefix" baralign.sh); then return 1; fi
-  "${local_prefix}baralign.sh" "$dirname/correct.families.tsv" "$dirname/refdir.tmp" 2>/dev/null \
-    | _clean_sam | diff -s - "$dirname/correct.sam"
+  "${local_prefix}baralign.sh" "$dirname/correct.families.d1.tsv" "$dirname/refdir.tmp" 2>/dev/null \
+    | _clean_sam | diff -s - "$dirname/correct.d1.sam"
   rm -rf "$dirname/refdir.tmp"
 }
 
@@ -345,6 +345,15 @@ function correct {
   "${local_prefix}correct.py" --no-check-ids "$dirname/correct.families.tsv" \
       "$dirname/correct.barcodes.fa" "$dirname/correct.sam" \
     | diff -s "$dirname/correct.families.corrected.tsv" -
+}
+
+# correct.py --dist 1
+function correct_d1 {
+  echo -e "\t${FUNCNAME[0]}:\tcorrect.py -d 1 ::: correct.sam"
+  if ! local_prefix=$(_get_local_prefix "$cmd_prefix" correct.py); then return 1; fi
+  "${local_prefix}correct.py" --no-check-ids --dist 1 "$dirname/correct.families.d1.tsv" \
+      "$dirname/correct.barcodes.d1.fa" "$dirname/correct.d1.sam" \
+    | diff -s "$dirname/correct.families.corrected.d1.tsv" -
 }
 
 
