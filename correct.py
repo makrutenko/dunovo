@@ -48,8 +48,8 @@ def make_argparser():
       'Set to greater than the barcode length for no threshold. Default: %(default)s')
   parser.add_argument('-c', '--choose-by', choices=('count', 'connect'), default='count',
     help='Choose the "correct" barcode in a network of related barcodes by either the count of how '
-      'many times the barcode was observed ("freq") or how connected the barcode is to the others '
-      'in the network ("connect").')
+      "many times the barcode was observed ('count') or how connected the barcode is to the others "
+      "in the network ('connect'). Default: %(default)s")
   parser.add_argument('-N', '--allow-no-nm-if-ns', action='store_true',
     help='Allow alignments with missing NM tags if the barcode has at least one N. Otherwise this '
       'will fail if it encounters an alignment missing an NM tag.')

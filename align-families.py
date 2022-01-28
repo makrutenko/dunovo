@@ -51,9 +51,9 @@ def make_argparser():
   parser.add_argument('-a', '--aligner', choices=('mafft', 'kalign', 'dummy'), default='kalign',
     help=wrap('The multiple sequence aligner to use. Default: %(default)s'))
   parser.add_argument('-I', '--no-check-ids', dest='check_ids', action='store_false', default=True,
-    help='Don\'t check to make sure read pairs have identical ids. By default, if this '
-         'encounters a pair of reads in families.tsv with ids that aren\'t identical (minus an '
-         'ending /1 or /2), it will throw an error.')
+    help=wrap("Don't check to make sure read pairs have identical ids. By default, if this "
+              "encounters a pair of reads in families.tsv with ids that aren't identical (minus an "
+              "ending /1 or /2), it will throw an error."))
   parser.add_argument('-p', '--processes', default=0,
     help=wrap('Number of worker subprocesses to use. If 0, no subprocesses will be started and '
               'everything will be done inside one process. Give "auto" to use as many processes '

@@ -98,7 +98,7 @@ def make_argparser():
     help=wrap("Which pairwise alignment library to use. 'swalign' uses a custom Smith-Waterman "
               "implementation by Nicolaus Lance Hepler and is the old default. 'biopython' uses "
               "BioPython's PairwiseAligner and a substitution matrix built by the Bioconductor's "
-              'Biostrings package.'))
+              'Biostrings package. Default: %(default)s'))
   phoning = parser.add_argument_group('Feedback')
   phoning.add_argument('--phone-home', action='store_true',
     help=wrap('Report helpful usage data to the developer, to better understand the use cases and '
