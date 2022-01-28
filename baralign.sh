@@ -45,14 +45,14 @@ function main {
 
   threads=1
   reverse=true
-  chunkmbs=$DefaultChunkMbs
+  chunkmbs="$DefaultChunkMbs"
   phone=
   platform_args=
   while getopts "rhc:t:pgv:" opt; do
     case "$opt" in
       r) reverse='';;
-      t) threads=$OPTARG;;
-      c) chunkmbs=$OPTARG;;
+      t) threads="$OPTARG";;
+      c) chunkmbs="$OPTARG";;
       p) phone='home';;
       g) platform_args='--platform galaxy';;
       v) echo "$version" && return;;
@@ -60,9 +60,9 @@ function main {
     esac
   done
   # Get positional arguments.
-  families=${@:$OPTIND:1}
-  refdir=${@:$OPTIND+1:1}
-  outfile=${@:$OPTIND+2:1}
+  families="${@:$OPTIND:1}"
+  refdir="${@:$OPTIND+1:1}"
+  outfile="${@:$OPTIND+2:1}"
 
   if [[ "$phone" ]] && [[ -x "$script_dir/ET/phone.py" ]]; then
     #TODO: Use version.py --get-key to read the project from VERSION.
@@ -74,32 +74,32 @@ function main {
   fi
 
   # Validate arguments.
-  if ! [[ $families ]]; then
-    fail "$Usage"$'\n'$'\n'"Error: Must provide an input families.tsv file."
-  elif ! [[ -f $families ]]; then
+  if ! [[ "$families" ]]; then
+    fail "$Usage"$'\n\nError: Must provide an input families.tsv file.'
+  elif ! [[ -f "$families" ]]; then
     fail "Error: families_file \"$families\" not found."
   fi
-  if ! [[ $refdir ]]; then
-    refdir=$RefdirDefault
+  if ! [[ "$refdir" ]]; then
+    refdir="$RefdirDefault"
   fi
-  if ! [[ -d $refdir ]]; then
+  if ! [[ -d "$refdir" ]]; then
     echo "Info: ref_dir \"$refdir\" not found. Creating.." >&2
-    mkdir $refdir
+    mkdir "$refdir"
   fi
   # Determine how and where to put the output.
-  if [[ ${outfile:${#outfile}-4} == .bam ]]; then
+  if [[ "${outfile:${#outfile}-4}" == .bam ]]; then
     format=bam
   else
     format=sam
   fi
   sam_outfile=
-  outbase=$(echo $outfile | sed -E 's/\.bam$//')
-  if [[ $outfile ]]; then
-    if [[ -e $outfile ]]; then
+  outbase=$(echo "$outfile" | sed -E 's/\.bam$//')
+  if [[ "$outfile" ]]; then
+    if [[ -e "$outfile" ]]; then
       fail "Error: output file \"$outfile\" already exists."
     fi
-    if [[ $format == bam ]]; then
-      if [[ -e $outbase.sam ]] || [[ -e $outbase.bam.bai ]]; then
+    if [[ "$format" == bam ]]; then
+      if [[ -e "$outbase.sam" ]] || [[ -e "$outbase.bam.bai" ]]; then
         fail "Error: A related filename already exists (.sam/.bam.bai)."
       fi
       sam_outfile="$outbase.sam"
@@ -110,7 +110,7 @@ function main {
 
   # Check for required commands.
   for cmd in $RequiredCommands; do
-    if ! which $cmd >/dev/null 2>/dev/null; then
+    if ! which "$cmd" >/dev/null 2>/dev/null; then
       fail "Error: command \"$cmd\" not found."
     fi
   done
@@ -127,7 +127,7 @@ function main {
         print "yes"
       }
     }')
-  if [[ $indexer_is_threaded ]]; then
+  if [[ "$indexer_is_threaded" ]]; then
     indexer_threads="--threads $threads"
   else
     indexer_threads=
@@ -160,10 +160,10 @@ outbase:  $outbase" >&2
   }
   {
     last = $1
-  }' $families > $refdir/barcodes.fa
+  }' "$families" > "$refdir/barcodes.fa"
 
   # Create "reference" to align the barcodes to.
-  if [[ $reverse ]]; then
+  if [[ "$reverse" ]]; then
     # If we're including reversed barcodes, create a new FASTA which includes reversed barcodes
     # as well as their forward versions.
     awk '
@@ -183,29 +183,30 @@ outbase:  $outbase" >&2
         alpha = substr(str, 1, half)
         beta = substr(str, half+1)
         return beta alpha
-      }' $families > $refdir/barcodes-ref.fa
+      }' "$families" > "$refdir/barcodes-ref.fa"
   else
     # If we're not including reversed barcodes, the original FASTA is all we need. Just link to it.
-    ln -s $refdir/barcodes.fa $refdir/barcodes-ref.fa
+    ln -s "$refdir/barcodes.fa" "$refdir/barcodes-ref.fa"
   fi
 
   # Perform alignment.
-  bowtie-build -f $indexer_threads --offrate 1 $refdir/barcodes-ref.fa $refdir/barcodes-ref >/dev/null
-  bowtie --chunkmbs $chunkmbs --threads $threads -f --sam -a --best -v 3 \
-    $refdir/barcodes-ref $refdir/barcodes.fa $sam_outfile
-  if [[ $outfile ]] && [[ $format == bam ]]; then
-    samtools view -Sb $sam_outfile | samtools sort -o - dummy > $outfile
-    if [[ -s $outfile ]]; then
-      samtools index $outfile
-      rm $sam_outfile
+  bowtie-build -f $indexer_threads --offrate 1 "$refdir/barcodes-ref.fa" "$refdir/barcodes-ref" \
+    >/dev/null
+  bowtie --chunkmbs "$chunkmbs" --threads "$threads" -f --sam -a --best -v 3 \
+    "$refdir/barcodes-ref" "$refdir/barcodes.fa" "$sam_outfile"
+  if [[ "$outfile" ]] && [[ "$format" == bam ]]; then
+    samtools view -Sb "$sam_outfile" | samtools sort -o - dummy > "$outfile"
+    if [[ -s "$outfile" ]]; then
+      samtools index "$outfile"
+      rm "$sam_outfile"
     fi
   fi
   # Check output.
   success=null
-  if [[ $outfile ]]; then
-    if [[ -s $outfile ]]; then
-      if [[ $format == bam ]] && [[ -e $outbase.sam ]]; then
-        rm $outbase.sam
+  if [[ "$outfile" ]]; then
+    if [[ -s "$outfile" ]]; then
+      if [[ "$format" == bam ]] && [[ -e "$outbase.sam" ]]; then
+        rm "$outbase.sam"
       fi
       success=true
       echo "Success. Output located in \"$outfile\"." >&2
