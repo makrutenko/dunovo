@@ -1,6 +1,6 @@
-GATTATTT	ab	1	@one/1	CATTGGTCAATT	nnacaeagasda
-GATTATTT	ab	2	@one/2	GTGTGATTAACC	nnacaeagasda
-TAAGCCCT	ab	1	@two/1	GTTACGAAGTGG	csacaeagadss
-TAAGCCCT	ab	2	@two/2	ACCCACCTCTTG	csacaeagadss
-GTGTGCGG	ba	1	@three/1	ATCTTTGGGCTA	aocasdefadva
-GTGTGCGG	ba	2	@three/2	CTCTTCATCAAT	aocasdefadva
+ATTTGATT	ba	1	one/1	CATTGGTCAATT	nnacaeagasda
+ATTTGATT	ba	2	one/2	GTGTGATTAACC	nnacaeagasda
+CCCTTAAG	ba	1	two/1	GTTACGAAGTGG	csacaeagadss
+CCCTTAAG	ba	2	two/2	ACCCACCTCTTG	csacaeagadss
+GCGGGTGT	ab	1	three/1	ATCTTTGGGCTA	aocasdefadva
+GCGGGTGT	ab	2	three/2	CTCTTCATCAAT	aocasdefadva

@@ -21,14 +21,14 @@
     <test>
       <param name="fastq1" value="smoke_1.fq"/>
       <param name="fastq2" value="smoke_2.fq"/>
-      <param name="taglen" value="5"/>
+      <param name="taglen" value="4"/>
       <param name="invariant" value="1"/>
       <output name="output" file="smoke.families.tsv"/>
     </test>
     <test>
       <param name="fastq1" value="smoke_1.fq"/>
       <param name="fastq2" value="smoke_2.fq"/>
-      <param name="taglen" value="5"/>
+      <param name="taglen" value="4"/>
       <param name="invariant" value="0"/>
       <output name="output" file="smoke.families.i0.tsv"/>
     </test>

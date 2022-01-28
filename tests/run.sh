@@ -230,6 +230,16 @@ function barcodes {
     | diff -s - "$dirname/families.sort.tsv"
 }
 
+# make-families.sh smoke test
+function make_smoke {
+  if ! local_prefix=$(_get_local_prefix "$cmd_prefix" make-barcodes.awk); then return 1; fi
+  echo -e "\t${FUNCNAME[0]}:\tmake-families.sh ::: smoke_[12].fq"
+  "${local_prefix}make-families.sh" -t 4 -i 1 "$dirname/smoke_1.fq" "$dirname/smoke_2.fq" \
+    | diff -s - "$dirname/smoke.families.tsv"
+  "${local_prefix}make-families.sh" -t 4 -i 0 "$dirname/smoke_1.fq" "$dirname/smoke_2.fq" \
+    | diff -s - "$dirname/smoke.families.i0.tsv"
+}
+
 # align-families.py
 function align {
   echo -e "\t${FUNCNAME[0]}:\talign-families.py ::: families.sort.tsv:"
@@ -250,7 +260,7 @@ function align_p3 {
 function align_smoke {
   echo -e "\t${FUNCNAME[0]}:\talign-families.py ::: smoke.families.tsv:"
   if ! local_prefix=$(_get_local_prefix "$cmd_prefix" align-families.py); then return 1; fi
-  "${local_prefix}align-families.py" --no-check-ids -q "$dirname/smoke.families.tsv" \
+  "${local_prefix}align-families.py" -q "$dirname/smoke.families.tsv" \
     | diff -s - "$dirname/smoke.families.aligned.tsv"
 }
 

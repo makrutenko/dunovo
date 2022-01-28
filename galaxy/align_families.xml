@@ -28,6 +28,7 @@
     </test>
     <test>
       <param name="input" value="families.sort.tsv"/>
+      <param name="check_ids" value="--no-check-ids"/>
       <output name="output" file="families.msa.tsv"/>
     </test>
   </tests>
