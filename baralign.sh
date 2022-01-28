@@ -8,6 +8,7 @@ set -ue
 Project=dunovo
 DefaultChunkMbs=512
 RefdirDefault=refdir
+EtDomain='nstoler.com'
 RequiredCommands='bowtie bowtie-build samtools awk'
 
 Usage="Usage: \$ $(basename $0) [options] families.tsv [refdir [outfile.sam|outfile.bam]]
@@ -66,7 +67,7 @@ function main {
   if [[ "$phone" ]] && [[ -x "$script_dir/ET/phone.py" ]]; then
     #TODO: Use version.py --get-key to read the project from VERSION.
     set +e
-    run_id=$("$script_dir/ET/phone.py" start --test --insecure --domain test.nstoler.com \
+    run_id=$("$script_dir/ET/phone.py" start --domain "$EtDomain" \
              --project "$Project" --script "$(basename "$0")" \
              --version "$version" $platform_args)
     set -e
@@ -137,7 +138,7 @@ function main {
     size=$(du -sb "$families" | awk '{print $1}')
     run_data="\"format\":\"$format\", \"threads\":\"$threads\", \"chunkmbs\":\"$chunkmbs\",\
               \"families_size\":\"$size\""
-    "$script_dir/ET/phone.py" prelim --test --insecure --domain test.nstoler.com \
+    "$script_dir/ET/phone.py" prelim --domain "$EtDomain" \
       --project "$Project" --script "$(basename "$0")" \
       --version "$version" $platform_args --run-id "$run_id" \
       --run-data "{$run_data}"
@@ -218,7 +219,7 @@ outbase:  $outbase" >&2
     set +e
     now=$(date +%s)
     run_time=$((now-start_time))
-    "$script_dir/ET/phone.py" end --test --insecure --domain test.nstoler.com \
+    "$script_dir/ET/phone.py" end --domain "$EtDomain" \
       --project "$Project" --script "$(basename "$0")" \
       --version "$version" $platform_args --run-id "$run_id" --run-time "$run_time" \
       --run-data "{$run_data, \"success\":$success}"
