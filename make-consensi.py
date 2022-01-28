@@ -94,7 +94,7 @@ def make_argparser():
     help=wrap('The absolute threshold to use when making consensus sequences. The consensus base '
               'must be present in more than this number of reads, or N will be used as the '
               'consensus base instead. Default: %(default)s'))
-  params.add_argument('-a', '--aligner', choices=('swalign', 'biopython'), default='swalign',
+  params.add_argument('-a', '--aligner', choices=('swalign', 'biopython'), default='biopython',
     help=wrap("Which pairwise alignment library to use. 'swalign' uses a custom Smith-Waterman "
               "implementation by Nicolaus Lance Hepler and is the old default. 'biopython' uses "
               "BioPython's PairwiseAligner and a substitution matrix built by the Bioconductor's "
@@ -337,7 +337,7 @@ def get_run_data(stats, pool, max_mem=None):
 
 def process_duplex(
   duplex, barcode, min_reads=3, cons_thres=0.5, min_cons_reads=0, qual_thres=' ', output_qual=None,
-  aligner='swalign'
+  aligner='biopython'
 ):
   """Create duplex consensus sequences for the reads from one barcode."""
   # The code in the main loop used to ensure that "duplex" contains only reads belonging to one final
@@ -390,7 +390,7 @@ def make_sscs(family, order, mate, qual_thres, cons_thres, min_cons_reads):
   return {'seq':consensus_seq, 'order':order, 'mate':mate, 'nreads':len(family)}
 
 
-def make_dcss(sscss, aligner='swalign'):
+def make_dcss(sscss, aligner='biopython'):
   # ordermates is the mapping between the duplex consensus mate number and the order/mates of the
   # SSCSs it's composed of. It's arbitrary but consistent, to make sure the duplex consensuses have
   # different mate numbers, and they're the same from run to run.

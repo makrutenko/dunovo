@@ -39,7 +39,7 @@ def make_argparser():
       'integers, representing the (1-based) order they appear in the families file.')
   parser.add_argument('-P', '--prepend', action='store_true',
     help='Prepend the corrected barcodes and orders to the original columns.')
-  parser.add_argument('-d', '--dist', type=int, default=1,
+  parser.add_argument('-d', '--dist', type=int, default=3,
     help='NM edit distance threshold. Default: %(default)s')
   parser.add_argument('-m', '--mapq', type=int, default=20,
     help='MAPQ threshold. Default: %(default)s')
