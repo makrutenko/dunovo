@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<tool id="precheck" name="Du Novo: Check input" version="2.15">
+<tool id="precheck" name="Du Novo: Check input" version="3.0">
   <requirements>
-    <requirement type="package" version="2.15">dunovo</requirement>
+    <requirement type="package" version="3.0">dunovo</requirement>
     <requirement type="package" version="3.8.10">python</requirement>
   </requirements>
   <description>for family content</description>
