@@ -199,7 +199,7 @@ function main {
     "$refdir/barcodes-ref.fa" "$refdir/barcodes-ref" > "$refdir/bowtie-build.out.log"
   set +e
   exho bowtie --chunkmbs "$chunkmbs" --threads "$threads" -f --sam -a --best -v 3 \
-    "$refdir/barcodes-ref" "$refdir/barcodes.fa" "$sam_outfile" 2> "$refdir/bowtie.err.log"
+    "$refdir/barcodes-ref" "$refdir/barcodes.fa" $sam_outfile 2> "$refdir/bowtie.err.log"
   exit_code="$?"
   set -e
   if [[ "$verbosity" -ge 2 ]]; then
