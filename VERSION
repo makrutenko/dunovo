@@ -1,4 +1,4 @@
 [version]
 project = dunovo
-version_num = 3.0.1
-stage = alpha
+version_num = 3.0.2
+stage = dev
