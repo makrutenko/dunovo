@@ -357,16 +357,17 @@ function correct_d1 {
 }
 
 
-# Only the tests above are for the "core" pipeline scripts.
-all_functions_up_to_core=$(list_functions)
-
-
 function precheck {
   echo -e "\t${FUNCNAME[0]}:\tprecheck.py ::: families.raw_[12].fq"
   if ! local_prefix=$(_get_local_prefix "$cmd_prefix" utils/precheck.py); then return 1; fi
   "${local_prefix}precheck.py" "$dirname/families.raw_1.fq" "$dirname/families.raw_2.fq" \
     | diff -s - "$dirname/families.precheck.tsv"
 }
+
+
+# Only the tests above are for the "core" pipeline scripts.
+all_functions_up_to_core=$(list_functions)
+
 
 function stats_diffs {
   echo -e "\t${FUNCNAME[0]}:\tstats.py diffs ::: gaps.msa.tsv:"
