@@ -1,4 +1,3 @@
-#!/bin/bash
 
 # Download submodules and move them to lib.
 get_submodule () {
@@ -29,9 +28,10 @@ mv *.so "$PREFIX/lib"
 mv kalign "$PREFIX/lib"
 
 # Move scripts to lib and link to them from bin.
+mkdir "$PREFIX/bin"
 for script in *.awk *.sh *.py; do
   mv "$script" "$PREFIX/lib"
-  ln -s "../lib/$script" "$PREFIX/bin"
+  ln -s "../lib/$script" "$PREFIX/bin/$script"
 done
 # Handle special cases.
 mv utils/precheck.py "$PREFIX/lib"
