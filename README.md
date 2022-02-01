@@ -4,7 +4,7 @@ This is a pipeline for processing duplex sequencing data without the use of a re
 
 The pipeline was designed for use with the duplex method described in [Kennedy *et al.* 2014](https://dx.doi.org/10.1038/nprot.2014.170), but the assumptions are relatively minimal, so you should be able to apply it to variants of the protocol.
 
-Du Novo 2.0 is released under the AFL license, but includes code licensed under the MIT and GPLv2 licenses. See [`LICENSE.txt`](LICENSE.txt) for details.
+Du Novo 2.0 and later are released under the AFL license, but includes code licensed under the MIT and GPLv2 licenses. See [`LICENSE.txt`](LICENSE.txt) for details.
 
 The latest [published](https://doi.org/10.1186/s12859-020-3419-8) version of Du Novo can be cited as:
 ````
@@ -15,7 +15,7 @@ Family reunion via error correction: an efficient analysis of duplex sequencing 
 
 ## Running Du Novo from Galaxy
 
-We created a comprehensive [tutorial](https://github.com/galaxyproject/dunovo/wiki) explaining all aspects of interactive use of Du Novo from within [Galaxy](http://usegalaxy.org).
+We created a comprehensive [tutorial](https://training.galaxyproject.org/training-material/topics/variant-analysis/tutorials/dunovo/tutorial.html) explaining all aspects of interactive use of Du Novo from within [Galaxy](http://usegalaxy.org).
 
 
 ## Running Du Novo on the command line
@@ -25,16 +25,15 @@ We created a comprehensive [tutorial](https://github.com/galaxyproject/dunovo/wi
 
 #### Required
 
-The pipeline requires a Unix operating system and Python version 3. Linux is recommended. OS X and BSD may work, but are untested.
+The pipeline requires a Unix operating system and Python, version 3.6 at least (3.8 recommended). Linux is recommended. OS X and BSD may work, but are untested.
 
-It also requires several standard Unix tools. Version numbers in parentheses are what the software was tested with, but other versions likely work. These must be available on your [`$PATH`](https://en.wikipedia.org/wiki/Search_path):  
- -  [`gcc`](https://gcc.gnu.org/) (4.8.4)
- -  [`make`](https://www.gnu.org/software/make/) (3.81)
- -  [`bash`](https://www.gnu.org/software/bash/bash.html) (4.0)
- -  [`awk`](https://www.gnu.org/software/gawk/) (4.0.1)
- -  [`paste`](https://www.gnu.org/software/coreutils/coreutils.html) (8.21)
- -  [`sort`](https://www.gnu.org/software/coreutils/coreutils.html) (8.21)
-
+It also requires several standard Unix tools. It makes use of several [coreutils](https://www.gnu.org/software/coreutils/coreutils.html) utilities, but these should be installed by default on most Unix systems. Following is a list of other commands which must be available on your [`$PATH`](https://en.wikipedia.org/wiki/Search_path). Version numbers in parentheses are what the software was tested with, but other versions likely work.:  
+ - [`gcc`](https://gcc.gnu.org/) (4.8.4)
+ - [`make`](https://www.gnu.org/software/make/) (3.81)
+ - [`bash`](https://www.gnu.org/software/bash/bash.html) (4.0)
+ - [`awk`](https://www.gnu.org/software/gawk/) (4.0.1)
+ - [`gzip`](https://www.gnu.org/software/gzip/) (1.10)
+ - [`file`](https://www.darwinsys.com/file/) (5.38)
 
 #### Optional
 
@@ -116,7 +115,7 @@ Your raw reads should be in `reads_1.fastq` and `reads_2.fastq`. And the scripts
 `$ align-families.py families.tsv > families.msa.tsv`
 
 4. Build duplex consensus sequences from the aligned families.  
-`$ make-consensi.py families.msa.tsv --dcs1 duplex_1.fa --dcs2 duplex_2.fa`
+`$ make-consensi.py --fastq-out 40 families.msa.tsv --dcs1 duplex_1.fq --dcs2 duplex_2.fq`
 
 See all options for a given command by giving it the `--help` flag.
 
@@ -154,7 +153,7 @@ By default, this uses the [Kalign2](http://msa.sbc.su.se/cgi-bin/msa.cgi) multip
 
 #### 4. Build duplex consensus sequences from the aligned families.  
 
-`$ make-consensi.py families.msa.tsv --dcs1 duplex_1.fa --dcs2 duplex_2.fa`
+`$ make-consensi.py --fastq-out 40 families.msa.tsv --dcs1 duplex_1.fq --dcs2 duplex_2.fq`
 
 This calls a consensus sequence from the multiple sequence alignments of the previous step. It does this in two steps: First, single-strand consensus sequences (SSCSs) are called from the family alignments, then duplex consensus sequences are called from pairs of SSCSs.
 
