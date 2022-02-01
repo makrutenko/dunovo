@@ -10,6 +10,7 @@ DefaultChunkMbs=512
 RefdirDefault=refdir
 EtDomain='nstoler.com'
 RequiredCommands='bowtie bowtie-build samtools awk'
+verbosity=2
 
 Usage="Usage: \$ $(basename $0) [options] families.tsv [refdir [outfile.sam|outfile.bam]]
 families.tsv: The families file produced by make-barcodes.awk and sorted.
@@ -29,7 +30,9 @@ outfile: Print the output to this path. It will be in SAM format unless the
     performance-related parameters (-t, -c, and the format of the output file).
     No filenames are sent. All the reporting and recording code is available at
     https://github.com/NickSto/ET.
--g: Report the platform as \"galaxy\" when sending usage data."
+-g: Report the platform as \"galaxy\" when sending usage data.
+-v: Print the version number and exit.
+-q: Quiet mode"
 
 function main {
 
@@ -48,7 +51,7 @@ function main {
   chunkmbs="$DefaultChunkMbs"
   phone=
   platform_args=
-  while getopts "rhc:t:pgv:" opt; do
+  while getopts "rhc:t:pgvq" opt; do
     case "$opt" in
       r) reverse='';;
       t) threads="$OPTARG";;
@@ -56,6 +59,7 @@ function main {
       p) phone='home';;
       g) platform_args='--platform galaxy';;
       v) echo "$version" && return;;
+      q) verbosity=1;;
       [h?]) fail "$Usage";;
     esac
   done
@@ -145,12 +149,13 @@ function main {
     set -e
   fi
 
-  echo "\
-families: $families
-refdir:   $refdir
-format:   $format
-outfile:  $outfile
-outbase:  $outbase" >&2
+  if [[ "$verbosity" -ge 2 ]]; then
+    printf 'families: %s\n' "$families" >&2
+    printf 'refdir:   %s\n' "$refdir" >&2
+    printf 'format:   %s\n' "$format" >&2
+    printf 'outfile:  %s\n' "$outfile" >&2
+    printf 'outbase:  %s\n' "$outbase" >&2
+  fi
 
   # Create FASTA with barcodes as "reads" for alignment.
   awk '$1 != last {
@@ -190,15 +195,24 @@ outbase:  $outbase" >&2
   fi
 
   # Perform alignment.
-  bowtie-build -f $indexer_threads --offrate 1 "$refdir/barcodes-ref.fa" "$refdir/barcodes-ref" \
-    >/dev/null
-  bowtie --chunkmbs "$chunkmbs" --threads "$threads" -f --sam -a --best -v 3 \
-    "$refdir/barcodes-ref" "$refdir/barcodes.fa" "$sam_outfile"
+  exho bowtie-build -f $indexer_threads --offrate 1 \
+    "$refdir/barcodes-ref.fa" "$refdir/barcodes-ref" > "$refdir/bowtie-build.out.log"
+  set +e
+  exho bowtie --chunkmbs "$chunkmbs" --threads "$threads" -f --sam -a --best -v 3 \
+    "$refdir/barcodes-ref" "$refdir/barcodes.fa" "$sam_outfile" 2> "$refdir/bowtie.err.log"
+  exit_code="$?"
+  set -e
+  if [[ "$verbosity" -ge 2 ]]; then
+    cat "$refdir/bowtie.err.log" >&2
+  fi
+  if [[ "$exit_code" != 0 ]]; then
+    exit "$exit_code"
+  fi
   if [[ "$outfile" ]] && [[ "$format" == bam ]]; then
-    samtools view -Sb "$sam_outfile" | samtools sort -o - dummy > "$outfile"
+    exho samtools view -Sb "$sam_outfile" | exho samtools sort -o - dummy > "$outfile"
     if [[ -s "$outfile" ]]; then
-      samtools index "$outfile"
-      rm "$sam_outfile"
+      exho samtools index "$outfile"
+      exho rm "$sam_outfile"
     fi
   fi
   # Check output.
@@ -206,10 +220,12 @@ outbase:  $outbase" >&2
   if [[ "$outfile" ]]; then
     if [[ -s "$outfile" ]]; then
       if [[ "$format" == bam ]] && [[ -e "$outbase.sam" ]]; then
-        rm "$outbase.sam"
+        exho rm "$outbase.sam"
       fi
       success=true
-      echo "Success. Output located in \"$outfile\"." >&2
+      if [[ "$verbosity" -ge 2 ]]; then
+        echo "Success. Output located in \"$outfile\"." >&2
+      fi
     else
       success=false
       fail "Warning: No output file \"$outfile\" found."
@@ -248,6 +264,14 @@ function get_script_dir {
     script_path=$(perl -MCwd -le 'print Cwd::abs_path(shift)' "${BASH_SOURCE[0]}")
   fi
   dirname "$script_path"
+}
+
+function exho {
+  # Echo a command to stderr, then execute it.
+  if [[ "$verbosity" -ge 2 ]]; then
+    echo "$@" >&2
+  fi
+  "$@"
 }
 
 function fail {
