@@ -18,22 +18,19 @@ requirements:
   build:
     - make
     - {{ compiler('c') }}
+    - python
     - wget
-    - tar
 
   run:
     - libgcc
-    - python >=3.6
-    - bash 4.4.18
+    - python
     - mafft 7.221
-    - bowtie 1.3.1
+    - bowtie >=1.1.2
     - networkx 2.4
     - biopython 1.78
     - samtools 1.9
+    - paste
     - gawk
-    - gzip
-    - file
-    - coreutils
 
 test:
   commands:
