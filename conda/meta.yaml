@@ -24,7 +24,7 @@ requirements:
     - libgcc
     - python
     - mafft 7.221
-    - bowtie 1.3.1
+    - bowtie >=1.3.0
     - networkx 2.4
     - biopython 1.78
     - samtools 1.9
