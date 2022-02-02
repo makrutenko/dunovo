@@ -21,11 +21,15 @@ requirements:
     - wget
 
   run:
+    - libgcc
+    - python
+    - bash >=4.0.0
+    - mafft 7.221
     - bowtie <1.2.0|>=1.3.0
-
-test:
-  commands:
-    - 'true'
+    - networkx 2.4
+    - biopython 1.78
+    - samtools 1.9
+    - gawk
 
 about:
   home: https://github.com/galaxyproject/dunovo
