@@ -33,15 +33,7 @@ requirements:
 
 test:
   commands:
-    - 'baralign.sh -v > /dev/null'
-    - 'correct.py --version > /dev/null'
-    - 'align-families.py --version > /dev/null'
-    - 'make-consensi.py --version > /dev/null'
-    - 'precheck.py --help > /dev/null'
-    - 'trimmer.py --help > /dev/null'
-  imports:
-    - networkx
-    - Bio.Align
+    - 'true'
 
 about:
   home: https://github.com/galaxyproject/dunovo
