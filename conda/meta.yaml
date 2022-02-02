@@ -24,11 +24,11 @@ requirements:
     - libgcc
     - python
     - bash >=4.0.0
-    - mafft 7.221
+    - mafft
     - bowtie <=1.1.1|>=1.3.0
-    - networkx 2.4
-    - biopython 1.78
-    - samtools 1.9
+    - networkx
+    - biopython
+    - samtools
     - gawk
 
 test:
