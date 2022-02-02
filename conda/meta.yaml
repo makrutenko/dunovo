@@ -29,6 +29,7 @@ requirements:
     - networkx 2.4
     - biopython 1.78
     - samtools 1.9
+    - gawk
 
 about:
   home: https://github.com/galaxyproject/dunovo
