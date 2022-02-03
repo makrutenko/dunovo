@@ -20,20 +20,22 @@ requirements:
     - {{ compiler('c') }}
     - wget
 
-  run:
+  host:
     - libgcc
     - python
-    - bash >=4.0.0
-    - mafft 7.221
-    - bowtie >=1.2.0|<1.3.0
-    - networkx 2.4
-    - biopython 1.78
-    - samtools 1.9
+    - bash
+    - networkx
+    - biopython
+
+  run:
+    - mafft
+    - bowtie <1.2.0|>=1.3.0
+    - samtools
     - gawk
 
 test:
   commands:
-    - 'true'
+    - 'baralign.sh -v > /dev/null'
     - 'correct.py --version > /dev/null'
     - 'align-families.py --version > /dev/null'
     - 'make-consensi.py --version > /dev/null'
