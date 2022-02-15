@@ -19,8 +19,8 @@
   <inputs>
     <param name="input" type="data" format="tabular" label="Aligned input reads" />
     <param name="min_reads" type="integer" value="3" min="1" label="Minimum reads for a consensus" help="This many reads are necessary to form a single-strand consensus sequence. Families smaller than this will be skipped."/>
-    <param name="cons_thres" type="float" value="0.5" min="0.5" max="1.0" label="Consensus % threshold" help="The consensus base must be present in more than this fraction of the reads, or &quot;N&quot; will be used instead."/>
-    <param name="min_cons_reads" type="integer" value="0" min="0" label="Minimum number of reads for a consensus base." help="The consensus base must be present in more than this absolute number of reads, or &quot;N&quot; will be used instead."/>
+    <param name="cons_thres" type="float" value="0.7" min="0" max="1.0" label="Consensus % threshold" help="The consensus base must be present in more than this fraction of the reads, or &quot;N&quot; will be used instead."/>
+    <param name="min_cons_reads" type="integer" value="0" min="0" label="Minimum number of reads for a consensus base." help="The consensus base must be present in more than this absolute number of reads, or &quot;N&quot; will be used instead. The &quot;Consensus % threshold&quot; sets a threshold based on the number of reads in the family, while this threshold is a fixed, absolute number. If both are used, the consensus base must pass both requirements."/>
     <conditional name="out_format">
       <param name="type" type="select" label="Output format">
         <option value="fasta" selected="true">FASTA</option>

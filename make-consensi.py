@@ -86,7 +86,7 @@ def make_argparser():
   params.add_argument('-q', '--qual', metavar='PHRED_SCORE', type=int, default=20,
     help=wrap('Base quality threshold. Bases below this quality will not be counted. '
               'Default: %(default)s.'))
-  params.add_argument('-c', '--cons-thres', metavar='THRES', type=float, default=0.5,
+  params.add_argument('-c', '--cons-thres', metavar='THRES', type=float, default=0.7,
     help=wrap('The fractional threshold to use when making consensus sequences. The consensus base '
               'must be present in more than this fraction of the reads, or N will be used as the '
               'consensus base instead. Default: %(default)s'))
