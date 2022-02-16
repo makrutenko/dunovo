@@ -469,7 +469,7 @@ function _consensi {
   done
   echo -e "\t${FUNCNAME[1]}:\tmake-consensi.py ${args[@]} ::: $input:"
   if ! local_prefix=$(_get_local_prefix "$cmd_prefix" make-consensi.py); then return 1; fi
-  "${local_prefix}make-consensi.py" --aligner biopython ${args[@]} "$dirname/$input" \
+  "${local_prefix}make-consensi.py" --aligner biopython --cons-thres 0.5 ${args[@]} "$dirname/$input" \
     --sscs1 "$dirname/cons.tmp.sscs_1.fa" --sscs2 "$dirname/cons.tmp.sscs_2.fa" \
     --dcs1  "$dirname/cons.tmp.dcs_1.fa"  --dcs2  "$dirname/cons.tmp.dcs_2.fa"
   diff -s "$dirname/cons.tmp.sscs_1.fa" "$dirname/$sscs1"
