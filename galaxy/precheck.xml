@@ -1,8 +1,7 @@
 <?xml version="1.0"?>
-<tool id="precheck" name="Du Novo: Check input" version="3.0">
+<tool id="precheck" name="Du Novo: Check input" version="3.0.2">
   <requirements>
-    <requirement type="package" version="3.0">dunovo</requirement>
-    <requirement type="package" version="3.8.10">python</requirement>
+    <requirement type="package" version="3.0.2">dunovo</requirement>
   </requirements>
   <description>for family content</description>
   <command detect_errors="exit_code">

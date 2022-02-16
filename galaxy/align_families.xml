@@ -1,10 +1,8 @@
 <?xml version="1.0"?>
-<tool id="align_families" name="Du Novo: Align families" version="3.0">
+<tool id="align_families" name="Du Novo: Align families" version="3.0.2">
   <description>of duplex sequencing reads</description>
   <requirements>
-    <requirement type="package" version="3.0">dunovo</requirement>
-    <requirement type="package" version="3.8.10">python</requirement>
-    <requirement type="package" version="7.221">mafft</requirement>
+    <requirement type="package" version="3.0.2">dunovo</requirement>
   </requirements>
   <version_command>align-families.py --version</version_command>
   <command detect_errors="exit_code">align-families.py $check_ids --aligner $aligner --galaxy $phone --processes \${GALAXY_SLOTS:-1} '$input' &gt; '$output'
