@@ -10,6 +10,3 @@
 [submodule "bfx"]
 	path = bfx
 	url = https://github.com/NickSto/bfx.git
-[submodule "pcr"]
-	path = pcr
-	url = https://github.com/NickSto/pcr.git
