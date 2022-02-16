@@ -11,16 +11,21 @@
     #if $out_format.type == 'fastq':
       --fastq-out $out_format.qual
     #end if
-    --qual $qual_thres --qual-format $qual_format --min-reads $min_reads --cons-thres $cons_thres --min-cons-reads $min_cons_reads '$input' --dcs1 '$dcs1' --dcs2 '$dcs2'
+    --aligner $advanced.aligner --qual $qual_thres --qual-format $qual_format --min-reads $min_reads --cons-thres $cons_thres --min-cons-reads $min_cons_reads '$input' --dcs1 '$dcs1' --dcs2 '$dcs2'
     #if $keep_sscs:
       --sscs1 '$sscs1' --sscs2 '$sscs2'
     #end if
   </command>
   <inputs>
     <param name="input" type="data" format="tabular" label="Aligned input reads" />
-    <param name="min_reads" type="integer" value="3" min="1" label="Minimum reads for a consensus" help="This many reads are necessary to form a single-strand consensus sequence. Families smaller than this will be skipped."/>
-    <param name="cons_thres" type="float" value="0.7" min="0" max="1.0" label="Consensus % threshold" help="The consensus base must be present in more than this fraction of the reads, or &quot;N&quot; will be used instead."/>
-    <param name="min_cons_reads" type="integer" value="0" min="0" label="Minimum number of reads for a consensus base." help="The consensus base must be present in more than this absolute number of reads, or &quot;N&quot; will be used instead. The &quot;Consensus % threshold&quot; sets a threshold based on the number of reads in the family, while this threshold is a fixed, absolute number. If both are used, the consensus base must pass both requirements."/>
+    <param name="min_reads" type="integer" value="3" min="1" label="Minimum reads for a consensus" help="This many reads are necessary to form a single-strand consensus sequence. Families smaller than this will be skipped and no consensus (single or duplex) will be produced."/>
+    <param name="cons_thres" type="float" value="0.7" min="0" max="1.0" label="Consensus % threshold" help="Each consensus base must be present in more than this fraction of the reads, or &quot;N&quot; will be used instead."/>
+    <param name="min_cons_reads" type="integer" value="0" min="0" label="Minimum number of reads for a consensus base." help="Each consensus base must be present in more than this absolute number of reads, or &quot;N&quot; will be used instead. The &quot;Consensus % threshold&quot; sets a threshold based on the number of reads in the family, while this threshold is a fixed, absolute number. If both are used, the consensus base must pass both requirements."/>
+    <param name="qual_thres" type="integer" value="25" min="1" label="Minimum base quality" help="Bases with a PHRED score less than this will not be counted in the consensus making."/>
+    <param name="qual_format" type="select" label="Input quality score format" help="Format of the FASTQ files of the raw reads. Solexa should also work for Illumina 1.3+ and 1.5+, and Sanger should work for Illumina 1.8+">
+      <option value="sanger" selected="true">Sanger (PHRED 0 = &quot;!&quot;)</option>
+      <option value="solexa">Solexa (PHRED 0 = &quot;@&quot;)</option>
+    </param>
     <conditional name="out_format">
       <param name="type" type="select" label="Output format">
         <option value="fasta" selected="true">FASTA</option>
@@ -30,13 +35,14 @@
         <param name="qual" type="integer" value="40" min="0" max="93" label="Output PHRED score" help="There is currently no way to output a meaningful quality score for consensus bases. You'll have to specify an artificial one, which will be given to every base. A good value is 40, the maximum score normally output by sequencers. This means the bases won't be inadvertently filtered out by some downstream tool."/>
       </when>
     </conditional>
-    <param name="qual_thres" type="integer" value="25" min="1" label="Minimum base quality" help="Bases with a PHRED score less than this will not be counted in the consensus making."/>
-    <param name="qual_format" type="select" label="FASTQ format" help="Solexa should also work for Illumina 1.3+ and 1.5+, and Sanger should work for Illumina 1.8+">
-      <option value="sanger" selected="true">Sanger (PHRED 0 = &quot;!&quot;)</option>
-      <option value="solexa">Solexa (PHRED 0 = &quot;@&quot;)</option>
-    </param>
     <param name="keep_sscs" type="boolean" truevalue="true" falsevalue="" label="Output single-strand consensus sequences as well" />
     <param name="phone" type="boolean" truevalue="--phone-home" falsevalue="" checked="False" label="Send usage data" help="Report helpful usage data to the developer, to better understand the use cases and performance of the tool. The only data which will be recorded is the name and version of the tool, the size of the input data, the number of processes used, the time and memory taken to process it, and the IP address of the machine running it. Also, if the tool fails, it will report the name of the exception thrown and the line of code it occurred in. The parameters and input/output dataset names are not sent. All the reporting and recording code is available at https://github.com/NickSto/ET."/>
+    <section name="advanced" title="Advanced Options" expanded="false">
+      <param name="aligner" type="select" value="biopython" label="Pairwise sequence aligner" help="Which pairwise alignment library to use. &quot;BioPython&quot; uses BioPython's PairwiseAligner and a substitution matrix built by Bioconductor's Biostrings package. &quot;swalign&quot; is a custom Smith-Waterman implementation by Nicolaus Lance Hepler. It is deprecated and kept only for backward compatibility.">
+        <option value="biopython">BioPython</option>
+        <option value="swalign">swalign</option>
+      </param>
+    </section>
   </inputs>
   <outputs>
     <data name="dcs1" label="$tool.name on $on_string (mate 1)">
