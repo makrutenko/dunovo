@@ -1,12 +1,11 @@
-#!/usr/bin/env python
-from __future__ import division
+#!/usr/bin/env python3
 import os
 import sys
 import math
 import argparse
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import seqtools
-import swalign
+from bfx import swalign
 
 INF = float('inf')
 STATS = ('diffs', 'diffs-binned', 'seqlen', 'strand')
@@ -98,7 +97,7 @@ def process_family(stats, barcode, consensus, family, args):
         sys.stdout.write('{}\t'.format(len(read)))
       elif stat == 'strand':
         sys.stdout.write('{}\t'.format(strand))
-    print read.upper()
+    print(read.upper())
 
 
 def get_strand(seq, probes, thres):
