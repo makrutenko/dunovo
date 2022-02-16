@@ -72,7 +72,7 @@ def make_argparser():
     help=wrap('Save the single-strand consensus sequences (mate 2) in this file (FASTA format). '
               'Warning: This will be overwritten if it exists!'))
   io.add_argument('-F', '--qual-format', choices=QUAL_OFFSETS.keys(), default='sanger',
-    help=wrap('FASTQ quality score format. Sanger scores are assumed to begin at '
+    help=wrap('Input quality score format. Sanger scores are assumed to begin at '
               f"{QUAL_OFFSETS['sanger']} ({chr(QUAL_OFFSETS['sanger'])!r}). Default: %(default)s."))
   io.add_argument('--fastq-out', metavar='PHRED_SCORE', type=int,
     help=wrap('Output in FASTQ instead of FASTA. You must specify the quality score to give to all '
@@ -95,10 +95,11 @@ def make_argparser():
               'must be present in more than this number of reads, or N will be used as the '
               'consensus base instead. Default: %(default)s'))
   params.add_argument('-a', '--aligner', choices=('swalign', 'biopython'), default='biopython',
-    help=wrap("Which pairwise alignment library to use. 'swalign' uses a custom Smith-Waterman "
-              "implementation by Nicolaus Lance Hepler and is the old default. 'biopython' uses "
-              "BioPython's PairwiseAligner and a substitution matrix built by the Bioconductor's "
-              'Biostrings package. Default: %(default)s'))
+    help=wrap("Which pairwise alignment library to use. 'biopython' uses BioPython's "
+              "PairwiseAligner and a substitution matrix built by Bioconductor's 'Biostrings' "
+              "package. 'swalign' uses a custom Smith-Waterman implementation by Nicolaus Lance "
+              "Hepler. It is deprecated and kept only for backward compatibility. "
+              "Default: %(default)s"))
   phoning = parser.add_argument_group('Feedback')
   phoning.add_argument('--phone-home', action='store_true',
     help=wrap('Report helpful usage data to the developer, to better understand the use cases and '
