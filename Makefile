@@ -1,12 +1,13 @@
+CC = gcc
 CFLAGS = -Wall -shared -fPIC
 
 all: local bfx kalign
 .PHONY: all
 
 local:
-	gcc $(CFLAGS) align.c -o libalign.so
-	gcc $(CFLAGS) seqtools.c -o libseqtools.so
-	gcc $(CFLAGS) consensus.c -o libconsensus.so
+	$(CC) $(CFLAGS) align.c -o libalign.so
+	$(CC) $(CFLAGS) seqtools.c -o libseqtools.so
+	$(CC) $(CFLAGS) consensus.c -o libconsensus.so
 .PHONY: local
 
 bfx:
